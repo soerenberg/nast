@@ -1,6 +1,5 @@
 module Text.Nast.Parsers.Shared
   ( eol
-  , newline
   ) where
 
 
@@ -15,7 +14,4 @@ import Text.ParserCombinators.Parsec
 import Control.Monad (void)
 
 eol :: Parser ()
-eol = (lookAhead eof) <|> newline
-
-newline :: Parser ()
-newline = (void $ char '\n') <?> "end of line"
+eol = (lookAhead eof) <|> (void $ char '\n') <?> "end of line"

@@ -26,9 +26,9 @@ source-repository head
 library
   exposed-modules:
       Text.Nast
-      Text.Nast.Comment
+      Text.Nast.Annotation
       Text.Nast.Expr
-      Text.Nast.Parsers.Comments
+      Text.Nast.Parsers.Annotations
       Text.Nast.Parsers.Literals
       Text.Nast.Parsers.Shared
   other-modules:
@@ -45,7 +45,7 @@ test-suite nast-test
   type: exitcode-stdio-1.0
   main-is: test-nast.hs
   other-modules:
-      Tests.Parsers.Comments
+      Tests.Parsers.Annotations
       Tests.Parsers.Literals
       Paths_nast
   hs-source-dirs:

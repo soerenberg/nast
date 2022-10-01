@@ -1,8 +1,12 @@
-module Text.Nast.Parsers.Comments
-  ( comment
+module Text.Nast.Parsers.Annotations
+  ( annotation
+  , newline
+  , comment
+  , lineBased
+  , bracketed
   ) where
 
-import Text.Nast.Comment (Comment (..))
+import Text.Nast.Annotation (Annotation (..))
 import Text.Nast.Parsers.Shared (eol)
 
 import Text.ParserCombinators.Parsec
@@ -10,23 +14,29 @@ import Text.ParserCombinators.Parsec
   , (<|>)
   , (<?>)
   , anyChar
+  , char
   , manyTill
   , noneOf
   , string
   , try)
 
+annotation :: Parser Annotation
+annotation = newline <|> comment
 
-comment :: Parser Comment
+newline :: Parser Annotation
+newline = char '\n' >> return Newline <?> "newline"
+
+comment :: Parser Annotation
 comment =   try lineBased
         <|> try bracketed
         <?> "comment"
 
-lineBased :: Parser Comment
+lineBased :: Parser Annotation
 lineBased = do _ <- string "//"
                c <- manyTill (noneOf "\n") eol
                return $ LineBased c
 
-bracketed :: Parser Comment
+bracketed :: Parser Annotation
 bracketed = do _ <- string "/*"
                c <- manyTill anyChar (try $ string "*/")
                return $ Bracketed c
