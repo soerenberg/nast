@@ -28,9 +28,7 @@ library
       Text.Nast
       Text.Nast.Annotation
       Text.Nast.Expr
-      Text.Nast.Parsers.Annotations
-      Text.Nast.Parsers.Literals
-      Text.Nast.Parsers.Shared
+      Text.Nast.Parser
   other-modules:
       Paths_nast
   hs-source-dirs:
@@ -46,8 +44,7 @@ test-suite nast-test
   main-is: test-nast.hs
   other-modules:
       Tests.Expr
-      Tests.Parsers.Annotations
-      Tests.Parsers.Literals
+      Tests.Parser
       Paths_nast
   hs-source-dirs:
       test
