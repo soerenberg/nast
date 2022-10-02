@@ -45,6 +45,7 @@ test-suite nast-test
   type: exitcode-stdio-1.0
   main-is: test-nast.hs
   other-modules:
+      Tests.Expr
       Tests.Parsers.Annotations
       Tests.Parsers.Literals
       Paths_nast
