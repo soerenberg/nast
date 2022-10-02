@@ -5,6 +5,7 @@ module Text.Nast.Expr
 
 
 data Expr a = NumLiteral String (Maybe String) (Maybe String)
+            | StringLiteral String
             | Annotate a (Expr a) deriving (Eq, Show)
 
 
