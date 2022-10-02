@@ -2,7 +2,7 @@ module Tests.Parser (tests) where
 
 import Text.Nast.Annotation (Annotation (..))
 import Text.Nast.Expr (Expr (..))
-import Text.Nast.Parser (literal, annotation, whitespace)
+import Text.Nast.Parser (literal, annotations, whitespace)
 
 import Text.ParserCombinators.Parsec (parse)
 
@@ -41,15 +41,26 @@ tests =
         assertBool "" (isLeft $ parse literal "" "\"a\na\"")
       ]
   , testGroup "annotations"
-    [ testCase "//" $ parse annotation "" "//" @?= (Right $ LineBased "")
-    , testCase "// abc" $ parse annotation "" "// abc" @?=
-        (Right $ LineBased " abc")
-    , testCase "/**/" $ parse annotation "" "/**/" @?= (Right $ Bracketed "")
-    , testCase "/* abc */" $ parse annotation "" "/* abc */" @?=
-        (Right $ Bracketed " abc ")
-    , testCase "/* ab*c*/" $ parse annotation "" "/* ab*c*/" @?=
-        (Right $ Bracketed " ab*c")
-    , testCase "\\n" $ parse annotation "" "\n" @?= Right Newline
+    [ testCase "//" $ parse annotations "" "//" @?= (Right [LineBased ""])
+    , testCase "// abc" $ parse annotations "" "// abc" @?=
+        (Right [LineBased " abc"])
+    , testCase "/**/" $ parse annotations "" "/**/" @?= (Right [Bracketed ""])
+    , testCase "/* abc */" $ parse annotations "" "/* abc */" @?=
+        (Right [Bracketed " abc "])
+    , testCase "/* ab*c*/" $ parse annotations "" "/* ab*c*/" @?=
+        (Right [Bracketed " ab*c"])
+    , testCase "/* a\\nb*c*/\\n//xy\\n//pq" $ parse annotations ""
+        "/* a\nb*c*/\n//xy\n//pq" @?=
+        (Right [Bracketed " a\nb*c", Newline, LineBased "xy", LineBased "pq"])
+    , testCase "\\n" $ parse annotations "" "\n" @?= Right [Newline]
+    ]
+  , testGroup "annotated"
+    [ testCase "literal 1 comment" $ parse literal "" "1//abc" @?=
+      (Right $ Annotate (NumLiteral "1" Nothing Nothing) (LineBased "abc"))
+    , testCase "literal 2 comments" $ parse literal "" "1 /* ab */ // xyz" @?=
+      (Right $ Annotate
+        (Annotate (NumLiteral "1" Nothing Nothing) (Bracketed " ab "))
+        (LineBased " xyz"))
     ]
   , testGroup "whitespace"
     [ testCase "''" $ parse whitespace "" "" @?= Right ""

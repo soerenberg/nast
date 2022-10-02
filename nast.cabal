@@ -43,7 +43,6 @@ test-suite nast-test
   type: exitcode-stdio-1.0
   main-is: test-nast.hs
   other-modules:
-      Tests.Expr
       Tests.Parser
       Paths_nast
   hs-source-dirs:

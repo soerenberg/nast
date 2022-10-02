@@ -1,6 +1,7 @@
 module Text.Nast.Parser (
   -- annotations
-    annotation
+    annotations
+  , annotate
   , bracketed
   , lineBased
   -- literals
@@ -30,6 +31,7 @@ import Text.ParserCombinators.Parsec
   , noneOf
   , oneOf
   , optionMaybe
+  , sepEndBy
   , string
   , try
   )
@@ -39,8 +41,12 @@ import Text.Nast.Expr (Expr (..))
 import Text.Nast.Annotation (Annotation (..))
 
 
-annotation :: Parser Annotation
-annotation = newline <|> comment
+annotations :: Parser [Annotation]
+annotations = whitespace >> (newline <|> comment) `sepEndBy` whitespace
+
+annotate :: (Expr Annotation) -> Parser (Expr Annotation)
+annotate e = do xs <- annotations
+                return $ foldl Annotate e xs
 
 comment :: Parser Annotation
 comment =   try lineBased
@@ -64,7 +70,7 @@ numLiteral :: Parser (Expr Annotation)
 numLiteral = do i <- signedInt
                 d <- optionMaybe (char '.' >> many1 digit)
                 e <- optionMaybe (char 'e' >> signedInt)
-                return $ NumLiteral i d e
+                annotate $ NumLiteral i d e
 
 signedInt :: Parser String
 signedInt = do plus <|> minus <|> nosign
@@ -76,7 +82,7 @@ stringLiteral :: Parser (Expr Annotation)
 stringLiteral = do _ <- char '"'
                    s <- many $ noneOf "\n\""
                    _ <- char '"'
-                   return $ StringLiteral s
+                   annotate $ StringLiteral s
 
 eol :: Parser ()
 eol = (lookAhead eof) <|> (void $ char '\n') <?> "end of line"
