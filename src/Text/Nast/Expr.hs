@@ -4,7 +4,7 @@ module Text.Nast.Expr
  ) where
 
 
-data Expr a = NumLiteral Integer (Maybe Integer) (Maybe Integer)
+data Expr a = NumLiteral String (Maybe String) (Maybe String)
             | Annotate a (Expr a) deriving (Eq, Show)
 
 
