@@ -11,6 +11,7 @@ module Text.Nast.Parser (
   -- shared
   , eol
   , newline
+  , whitespace
   ) where
 
 
@@ -27,6 +28,7 @@ import Text.ParserCombinators.Parsec
   , many1
   , manyTill
   , noneOf
+  , oneOf
   , optionMaybe
   , string
   , try
@@ -81,3 +83,6 @@ eol = (lookAhead eof) <|> (void $ char '\n') <?> "end of line"
 
 newline :: Parser Annotation
 newline = char '\n' >> return Newline <?> "newline"
+
+whitespace :: Parser String
+whitespace = many $ oneOf " \t"

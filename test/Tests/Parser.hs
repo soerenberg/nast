@@ -2,7 +2,7 @@ module Tests.Parser (tests) where
 
 import Text.Nast.Annotation (Annotation (..))
 import Text.Nast.Expr (Expr (..))
-import Text.Nast.Parser (literal, annotation)
+import Text.Nast.Parser (literal, annotation, whitespace)
 
 import Text.ParserCombinators.Parsec (parse)
 
@@ -49,6 +49,12 @@ tests =
         (Right $ Bracketed " abc ")
     , testCase "/* ab*c*/" $ parse annotation "" "/* ab*c*/" @?=
         (Right $ Bracketed " ab*c")
-    , testCase "\n" $ parse annotation "" "\n" @?= Right Newline
+    , testCase "\\n" $ parse annotation "" "\n" @?= Right Newline
+    ]
+  , testGroup "whitespace"
+    [ testCase "''" $ parse whitespace "" "" @?= Right ""
+    , testCase "'  '" $ parse whitespace "" "  " @?= Right "  "
+    , testCase "'\\t  \\t'" $ parse whitespace "" "\t  \t" @?= Right "\t  \t"
+    , testCase "no newline" $ parse whitespace "" " \n" @?= Right " "
     ]
   ]
