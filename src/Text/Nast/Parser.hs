@@ -40,6 +40,7 @@ import Text.ParserCombinators.Parsec
   , char
   , digit
   , eof
+  , letter
   , lookAhead
   , many
   , many1
@@ -218,8 +219,21 @@ precedence0 = primary
 primary :: Parser (Expr Annotation)
 primary = literal <|> parentheses <|> identifier
 
+{-|
+Identifier
+
+The following constraints must hold:
+* Only @a-z@, @A-Z@, @_@, @0-9@ allowed.
+* Must start with letter.
+* Must not end with two underscores: @__@.
+-}
 identifier :: Parser (Expr Annotation)
-identifier = fail "not yet implemented"
+identifier = do x <- letter
+                xs <- many $ letter <|> digit <|> char '_'
+                let p = take 2 . reverse $ xs
+                if p == "__"
+                  then fail "identifier must not end with '__'"
+                  else annotate $ Identifier (x:xs)
 
 parentheses :: Parser (Expr Annotation)
 parentheses = do _ <- char '('

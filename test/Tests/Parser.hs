@@ -2,7 +2,13 @@ module Tests.Parser (tests) where
 
 import Text.Nast.Annotation (Annotation (..))
 import Text.Nast.Expr (Expr (..))
-import Text.Nast.Parser (expression, literal, annotations, whitespace)
+import Text.Nast.Parser
+  ( annotations
+  , expression
+  , identifier
+  , literal
+  , whitespace
+  )
 
 import Text.ParserCombinators.Parsec (parse)
 
@@ -53,6 +59,18 @@ tests =
     , testCase "(/*a*/ /*b*/\\n3)" $ parse expression "" "(/*a*/ /*b*/\n3)" @?=
         (Right $ Parens [Bracketed "a", Bracketed "b", Newline]
                         (NumLiteral "3" Nothing Nothing))
+    ]
+  , testGroup "identifier"
+    [ testCase "a" $ parse expression "" "a" @?=
+        (Right $ Identifier "a")
+    , testCase "xyz" $ parse expression "" "xyz" @?=
+        (Right $ Identifier "xyz")
+    , testCase "xyZz12" $ parse expression "" "xyZz12" @?=
+        (Right $ Identifier "xyZz12")
+    , testCase "fail 1" $ assertBool "" (isLeft $ parse identifier "" "1")
+    , testCase "fail 12ab" $ assertBool "" (isLeft $ parse identifier "" "12ab")
+    , testCase "fail _xy" $ assertBool "" (isLeft $ parse identifier "" "_xy")
+    , testCase "fail ab__" $ assertBool "" (isLeft $ parse identifier "" "ab__")
     ]
   , testGroup "annotations"
     [ testCase "//" $ parse annotations "" "//" @?= (Right [LineBased ""])

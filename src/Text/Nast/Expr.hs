@@ -11,6 +11,7 @@ data Expr a = NumLiteral            -- ^ Numeric literal
             | Parens                -- ^ Parentheses expression
                 [a]                 -- ^ Annotations after opening `(`
                 (Expr a)            -- ^ Expression to be parenthesized
+            | Identifier String     -- ^ Identifier
             | Annotate              -- ^ Annotation node
                 (Expr a)            -- ^ Expression to be annotated
                 a                   -- ^ Annotation
