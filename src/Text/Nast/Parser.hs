@@ -1,15 +1,15 @@
 module Text.Nast.Parser (
-  -- annotations
+  -- * annotations
     annotations
   , annotate
   , bracketed
   , lineBased
-  -- literals
+  -- * literals
   , literal
   , numLiteral
   , signedInt
   , stringLiteral
-  -- shared
+  -- * shared
   , eol
   , newline
   , whitespace
@@ -41,28 +41,34 @@ import Text.Nast.Expr (Expr (..))
 import Text.Nast.Annotation (Annotation (..))
 
 
+-- | Zero or more comments and newlines
 annotations :: Parser [Annotation]
 annotations = whitespace >> (newline <|> comment) `sepEndBy` whitespace
 
-annotate :: (Expr Annotation) -> Parser (Expr Annotation)
+-- | Parse annotations, create tree with expression as leaf
+annotate :: Expr Annotation -> Parser (Expr Annotation)
 annotate e = do xs <- annotations
                 return $ foldl Annotate e xs
 
+-- | Stan comment
 comment :: Parser Annotation
 comment =   try lineBased
         <|> try bracketed
         <?> "comment"
 
+-- | @//* ... *//@ style comment
 bracketed :: Parser Annotation
 bracketed = do _ <- string "/*"
                c <- manyTill anyChar (try $ string "*/")
                return $ Bracketed c
 
+-- | @// ...@ style comment
 lineBased :: Parser Annotation
 lineBased = do _ <- string "//"
                c <- manyTill (noneOf "\n") eol
                return $ LineBased c
 
+-- | Stan literal
 literal :: Parser (Expr Annotation)
 literal = numLiteral <|> stringLiteral
 
@@ -90,5 +96,6 @@ eol = (lookAhead eof) <|> (void $ char '\n') <?> "end of line"
 newline :: Parser Annotation
 newline = char '\n' >> return Newline <?> "newline"
 
+-- | Zero or more space or tab characters
 whitespace :: Parser String
 whitespace = many $ oneOf " \t"
