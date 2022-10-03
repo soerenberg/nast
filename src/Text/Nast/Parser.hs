@@ -222,7 +222,11 @@ identifier :: Parser (Expr Annotation)
 identifier = fail "not yet implemented"
 
 parentheses :: Parser (Expr Annotation)
-parentheses = fail "not yet implemented"
+parentheses = do _ <- char '('
+                 xs <- annotations
+                 e <- expression
+                 _ <- char ')'
+                 annotate $ Parens xs e
 
 eol :: Parser ()
 eol = (lookAhead eof) <|> (void $ char '\n') <?> "end of line"
