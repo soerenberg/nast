@@ -3,7 +3,15 @@ module Text.Nast.Expr
  ) where
 
 
-data Expr a = NumLiteral            -- ^ Numeric literal
+data Expr a = Add                   -- ^ Addition
+              (Expr a)              -- ^ left summand
+              [a]                   -- ^ Annotations after '+' symbol
+              (Expr a)              -- ^ right summand
+            | Sub                   -- ^ Subtraction
+              (Expr a)              -- ^ left summand
+              [a]                   -- ^ Annotations after '-' symbol
+              (Expr a)              -- ^ right summand
+            | NumLiteral            -- ^ Numeric literal
                 String              -- ^ Digits before comma
                 (Maybe String)      -- ^ Decimal places after comma
                 (Maybe String)      -- ^ Exponent

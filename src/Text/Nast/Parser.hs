@@ -37,6 +37,7 @@ import Text.ParserCombinators.Parsec
   , (<|>)
   , (<?>)
   , anyChar
+  , chainl1
   , char
   , digit
   , eof
@@ -164,7 +165,12 @@ Precedence level 5 expressions
 * @-@ op, binary infix, left associative; subtraction
 -}
 precedence5 :: Parser (Expr Annotation)
-precedence5 = precedence4
+precedence5 = chainl1 precedence4 p
+  where p :: Parser (Expr Annotation -> Expr Annotation -> Expr Annotation)
+        p = do s <- oneOf "+-"
+               let op = if s == '+' then Add else Sub
+               xs <- annotations
+               return $ (\l r -> op l xs r)
 
 {-|
 Precedence level 4 expressions

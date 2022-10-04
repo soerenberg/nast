@@ -20,7 +20,33 @@ import Data.Either (isLeft)
 
 tests :: [TestTree]
 tests =
-  [ testGroup "literal"
+  [ testGroup "Precedence 4"
+      [ testCase "3 + 4" $ parse expression "" "3 + 4" @?=
+        (Right $ Add (NumLiteral "3" Nothing Nothing) [] (NumLiteral "4" Nothing Nothing))
+      , testCase "0+1" $ parse expression "" "0+1" @?=
+        (Right $ Add (NumLiteral "0" Nothing Nothing) [] (NumLiteral "1" Nothing Nothing))
+      , testCase "annotated addition" $ parse expression "" "3 /*a*/ + /*b*/ /*c*/\n4 /*d*/" @?=
+        (Right $ Add (Annotate (NumLiteral "3" Nothing Nothing) (Bracketed "a"))
+                     [Bracketed "b", Bracketed "c", Newline]
+                     (Annotate (NumLiteral "4" Nothing Nothing) (Bracketed "d")))
+      , testCase "1 +2 +  3" $ parse expression "" "1 +2 +  3" @?=
+        (Right $ Add (Add (NumLiteral "1" Nothing Nothing) []
+                          (NumLiteral "2" Nothing Nothing))
+                     [] (NumLiteral "3" Nothing Nothing))
+      , testCase "3 - 4" $ parse expression "" "3 - 4" @?=
+        (Right $ Sub (NumLiteral "3" Nothing Nothing) [] (NumLiteral "4" Nothing Nothing))
+      , testCase "0-1" $ parse expression "" "0-1" @?=
+        (Right $ Sub (NumLiteral "0" Nothing Nothing) [] (NumLiteral "1" Nothing Nothing))
+      , testCase "annotated subtraction" $ parse expression "" "3 /*a*/ - /*b*/ /*c*/\n4 /*d*/" @?=
+        (Right $ Sub (Annotate (NumLiteral "3" Nothing Nothing) (Bracketed "a"))
+                     [Bracketed "b", Bracketed "c", Newline]
+                     (Annotate (NumLiteral "4" Nothing Nothing) (Bracketed "d")))
+      , testCase "1 -2 +  3" $ parse expression "" "1 -2 +  3" @?=
+        (Right $ Add (Sub (NumLiteral "1" Nothing Nothing) []
+                          (NumLiteral "2" Nothing Nothing))
+                     [] (NumLiteral "3" Nothing Nothing))
+      ]
+  , testGroup "literal"
       [ testCase "23" $ parse literal "" "23" @?=
         (Right $ NumLiteral "23" Nothing Nothing)
       , testCase "-7" $ parse literal "" "-7" @?=
