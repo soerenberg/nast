@@ -20,7 +20,7 @@ import Data.Either (isLeft)
 
 tests :: [TestTree]
 tests =
-  [ testGroup "Precedence 4"
+  [ testGroup "Precedence 5"
       [ testCase "3 + 4" $ parse expression "" "3 + 4" @?=
         (Right $ Add (NumLiteral "3" Nothing Nothing) [] (NumLiteral "4" Nothing Nothing))
       , testCase "0+1" $ parse expression "" "0+1" @?=
@@ -45,6 +45,29 @@ tests =
         (Right $ Add (Sub (NumLiteral "1" Nothing Nothing) []
                           (NumLiteral "2" Nothing Nothing))
                      [] (NumLiteral "3" Nothing Nothing))
+      ]
+  , testGroup "Precedence 4"
+      [ testCase "3 * x" $ parse expression "" "3 * x" @?=
+        (Right $ Mul (NumLiteral "3" Nothing Nothing) [] (Identifier "x"))
+      , testCase "0*1" $ parse expression "" "0*1" @?=
+        (Right $ Mul (NumLiteral "0" Nothing Nothing) []
+                     (NumLiteral "1" Nothing Nothing))
+      , testCase "annotated multiplication" $
+        parse expression "" "3 /*a*/ * /*b*/ /*c*/\n4 /*d*/" @?=
+        (Right $ Mul (Annotate (NumLiteral "3" Nothing Nothing) (Bracketed "a"))
+                     [Bracketed "b", Bracketed "c", Newline]
+                     (Annotate (NumLiteral "4" Nothing Nothing)
+                               (Bracketed "d")))
+      , testCase "a * b + c" $ parse expression "" "a * b + c" @?=
+        (Right $ Add (Mul (Identifier "a") [] (Identifier "b")) []
+                     (Identifier "c"))
+      , testCase "a + b / c" $ parse expression "" "a + b / c" @?=
+        (Right $ Add (Identifier "a") []
+                     (Div (Identifier "b") [] (Identifier "c")))
+      , testCase "p .* q" $ parse expression "" "p .* q" @?=
+        (Right $ EltMul (Identifier "p") [] (Identifier "q"))
+      , testCase "p ./ q" $ parse expression "" "p ./ q" @?=
+        (Right $ EltDiv (Identifier "p") [] (Identifier "q"))
       ]
   , testGroup "literal"
       [ testCase "23" $ parse literal "" "23" @?=

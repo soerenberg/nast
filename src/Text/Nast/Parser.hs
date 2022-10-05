@@ -182,7 +182,16 @@ Precedence level 4 expressions
 * @%@ op, binary infix, left associative; modulo
 -}
 precedence4 :: Parser (Expr Annotation)
-precedence4 = precedence3
+precedence4 = chainl1 precedence3 p
+  where p = do s <- (string "*") <|> (string "/") <|> (try $ string ".*") <|>
+                    (try $ string "./")
+               let op = case s of
+                          "*" -> Mul
+                          "/" -> Div
+                          ".*" -> EltMul
+                          _ -> EltDiv
+               xs <- annotations
+               return $ (\l r -> op l xs r)
 
 {-|
 Precedence level 3 expressions
