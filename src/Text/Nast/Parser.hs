@@ -25,6 +25,8 @@ module Text.Nast.Parser (
   , primary
   , identifier
   , parentheses
+  , binOp
+  , binConstr
   -- * shared
   , eol
   , newline
@@ -54,6 +56,7 @@ import Text.ParserCombinators.Parsec
   , try
   )
 import Control.Monad (void)
+import qualified Data.Map as Map
 
 import Text.Nast.Expr (Expr (..))
 import Text.Nast.Annotation (Annotation (..))
@@ -156,16 +159,7 @@ Precedence level 6 expressions
 * @>=@ op, binary infix, left associative; greater or equal than
 -}
 precedence6 :: Parser (Expr Annotation)
-precedence6 = chainl1 precedence5 p
-  where p = do s <- ((try $ string "<=") <|> (try $ string "<") <|>
-                     (try $ string ">=") <|> (try $ string ">"))
-               let op = case s of
-                          "<" -> Lt
-                          "<=" -> Leq
-                          ">" -> Gt
-                          _ -> Geq
-               xs <- annotations
-               return (\l r -> op l xs r)
+precedence6 = chainl1 precedence5 $ binOp ["<=", "<", ">=", ">"]
 
 {-|
 Precedence level 5 expressions
@@ -174,12 +168,7 @@ Precedence level 5 expressions
 * @-@ op, binary infix, left associative; subtraction
 -}
 precedence5 :: Parser (Expr Annotation)
-precedence5 = chainl1 precedence4 p
-  where p :: Parser (Expr Annotation -> Expr Annotation -> Expr Annotation)
-        p = do s <- oneOf "+-"
-               let op = if s == '+' then Add else Sub
-               xs <- annotations
-               return $ (\l r -> op l xs r)
+precedence5 = chainl1 precedence4 $ binOp ["+", "-"]
 
 {-|
 Precedence level 4 expressions
@@ -191,16 +180,7 @@ Precedence level 4 expressions
 * @%@ op, binary infix, left associative; modulo
 -}
 precedence4 :: Parser (Expr Annotation)
-precedence4 = chainl1 precedence3 p
-  where p = do s <- (string "*") <|> (string "/") <|> (try $ string ".*") <|>
-                    (try $ string "./")
-               let op = case s of
-                          "*" -> Mul
-                          "/" -> Div
-                          ".*" -> EltMul
-                          _ -> EltDiv
-               xs <- annotations
-               return $ (\l r -> op l xs r)
+precedence4 = chainl1 precedence3 $ binOp ["*", "/", ".*", "./"]
 
 {-|
 Precedence level 3 expressions
@@ -266,6 +246,60 @@ parentheses = do _ <- char '('
                  _ <- char ')'
                  annotate $ Parens xs e
 
+{-| Type synonym for binary operation on expressions (`Expr`). -}
+type BinOp = Expr Annotation  -- ^ left-hand side
+           -> Expr Annotation -- ^ right-hand side
+           -> Expr Annotation
+
+{-| Type synonym for constructors of `Expr a` that represent binary Stan
+operations.
+-}
+type BinConstr = Expr Annotation  -- ^ left-hand side
+               -> [Annotation]    -- ^ annotations ofter op symbol
+               -> Expr Annotation -- ^ right-hand side
+               -> Expr Annotation
+
+{-|
+Parse binary operation on `Expr a` operation, with annotations for the
+underlying infix symbol. Thus, this is a helper function to parse binary
+stan ops
+
+For a given list of expected symbols will return the first successfully parsed
+candidate. Thus, @binConstr ["<", "<="]@ and @binConstr ["<=", "<"]@ are
+generally not equivalent (the latter is probably the desired call).
+-}
+binOp :: [String] -> Parser BinOp
+binOp xs = do op <- binConstr xs
+              case op of
+                -- Note: than op is Nothing should never happen in practice
+                Nothing -> fail $ "Cannot identify binary op in " ++ (show xs)
+                (Just op') -> do as <- annotations
+                                 return (\l r -> op' l as r)
+
+{-|
+Parse constructor of binary `Expr` operation, e.g. `Add`, `Mul`.
+
+For a given list of expected symbols will return the first successfully parsed
+candidate. Thus, @binConstr ["<", "<="]@ and @binConstr ["<=", "<"]@ are
+generally not equivalent (the latter is probably the desired call).
+-}
+binConstr :: [String]  -- ^ List of expected symbols, e.g. @["+", "-"]@.
+          -> Parser (Maybe BinConstr)
+binConstr xs = (flip Map.lookup toBinOp) <$> (foldl1 (<|>) $ map (try . string) xs)
+  where toBinOp :: Map.Map String (Expr a -> [a] -> Expr a -> Expr a)
+        toBinOp = Map.fromList
+          [ (">",  Gt)
+          , (">=", Geq)
+          , ("<",  Lt)
+          , ("<=", Leq)
+          , ("+",  Add)
+          , ("-",  Sub)
+          , ("*",  Mul)
+          , ("/",  Div)
+          , (".*", EltMul)
+          , ("./", EltDiv)
+          ]
+
 eol :: Parser ()
 eol = (lookAhead eof) <|> (void $ char '\n') <?> "end of line"
 
@@ -275,3 +309,4 @@ newline = char '\n' >> return Newline <?> "newline"
 -- | Zero or more space or tab characters
 whitespace :: Parser String
 whitespace = many $ oneOf " \t"
+
