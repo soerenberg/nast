@@ -3,7 +3,23 @@ module Text.Nast.Expr
  ) where
 
 
-data Expr a = Add                   -- ^ Addition
+data Expr a = Gt                    -- ^ Greater than ('>')
+              (Expr a)              -- ^ Left-hand side
+              [a]                   -- ^ Annotations after '>' symbol
+              (Expr a)              -- ^ Right-hand side
+            | Geq                   -- ^ Greater or equal than ('>=')
+              (Expr a)              -- ^ Left-hand side
+              [a]                   -- ^ Annotations after '>=' symbol
+              (Expr a)              -- ^ Right-hand side
+            | Lt                    -- ^ Less than ('<')
+              (Expr a)              -- ^ Left-hand side
+              [a]                   -- ^ Annotations after '<' symbol
+              (Expr a)              -- ^ Right-hand side
+            | Leq                   -- ^ Less or equal than ('<=')
+              (Expr a)              -- ^ Left-hand side
+              [a]                   -- ^ Annotations after '<=' symbol
+              (Expr a)              -- ^ Right-hand side
+            | Add                   -- ^ Addition
               (Expr a)              -- ^ left summand
               [a]                   -- ^ Annotations after '+' symbol
               (Expr a)              -- ^ right summand

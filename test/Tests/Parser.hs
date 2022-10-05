@@ -20,7 +20,42 @@ import Data.Either (isLeft)
 
 tests :: [TestTree]
 tests =
-  [ testGroup "Precedence 5"
+  [ testGroup "Precedence 6"
+      [ testCase "a > b > c" $ parse expression "" "a > b > c" @?=
+        (Right $ Gt (Gt (Identifier "a") [] (Identifier "b")) []
+                    (Identifier "c"))
+      , testCase "a >= b >= c" $ parse expression "" "a >= b >= c" @?=
+        (Right $ Geq (Geq (Identifier "a") [] (Identifier "b")) []
+                     (Identifier "c"))
+      , testCase "a < b < c" $ parse expression "" "a < b < c" @?=
+        (Right $ Lt (Lt (Identifier "a") [] (Identifier "b")) []
+                    (Identifier "c"))
+      , testCase "a <= b <= c" $ parse expression "" "a <= b <= c" @?=
+        (Right $ Leq (Leq (Identifier "a") [] (Identifier "b")) []
+                     (Identifier "c"))
+      , testCase "annotated Gt" $ parse expression ""
+                                  "x /*a*/ > /*b*/ /*c*/\ny /*d*/" @?=
+        (Right $ Gt (Annotate (Identifier "x") (Bracketed "a"))
+                    [Bracketed "b", Bracketed "c", Newline]
+                    (Annotate (Identifier "y") (Bracketed "d")))
+      , testCase "annotated Geq" $ parse expression ""
+                                  "x /*a*/ >= /*b*/ /*c*/\ny /*d*/" @?=
+        (Right $ Geq (Annotate (Identifier "x") (Bracketed "a"))
+                     [Bracketed "b", Bracketed "c", Newline]
+                     (Annotate (Identifier "y") (Bracketed "d")))
+      , testCase "annotated Lt" $ parse expression ""
+                                  "x /*a*/ < /*b*/ /*c*/\ny /*d*/" @?=
+        (Right $ Lt (Annotate (Identifier "x") (Bracketed "a"))
+                    [Bracketed "b", Bracketed "c", Newline]
+                    (Annotate (Identifier "y") (Bracketed "d")))
+      , testCase "annotated Leq" $ parse expression ""
+                                  "x /*a*/ <= /*b*/ /*c*/\ny /*d*/" @?=
+        (Right $ Leq (Annotate (Identifier "x") (Bracketed "a"))
+                     [Bracketed "b", Bracketed "c", Newline]
+                     (Annotate (Identifier "y") (Bracketed "d")))
+
+      ]
+  , testGroup "Precedence 5"
       [ testCase "3 + 4" $ parse expression "" "3 + 4" @?=
         (Right $ Add (NumLiteral "3" Nothing Nothing) [] (NumLiteral "4" Nothing Nothing))
       , testCase "0+1" $ parse expression "" "0+1" @?=

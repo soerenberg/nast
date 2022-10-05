@@ -156,7 +156,16 @@ Precedence level 6 expressions
 * @>=@ op, binary infix, left associative; greater or equal than
 -}
 precedence6 :: Parser (Expr Annotation)
-precedence6 = precedence5
+precedence6 = chainl1 precedence5 p
+  where p = do s <- ((try $ string "<=") <|> (try $ string "<") <|>
+                     (try $ string ">=") <|> (try $ string ">"))
+               let op = case s of
+                          "<" -> Lt
+                          "<=" -> Leq
+                          ">" -> Gt
+                          _ -> Geq
+               xs <- annotations
+               return (\l r -> op l xs r)
 
 {-|
 Precedence level 5 expressions
