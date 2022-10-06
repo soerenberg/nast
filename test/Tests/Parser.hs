@@ -20,7 +20,18 @@ import Data.Either (isLeft)
 
 tests :: [TestTree]
 tests =
-  [ testGroup "Precedence 7"
+  [ testGroup "Precedence 8"
+      [ testCase "a && b&&c" $ parse expression "" "a && b&&c" @?=
+        (Right $ And (And id_a [] id_b) [] id_c)
+      , testCase "a&& b &&c" $ parse expression "" "a&& b &&c" @?=
+        (Right $ And (And id_a [] id_b) [] id_c)
+      , testCase "annotated &&" $ parse expression ""
+                                  "x /*a*/ && /*b*/ /*c*/\ny /*d*/" @?=
+        (Right $ And (Annotate id_x (Bracketed "a"))
+                     [Bracketed "b", Bracketed "c", Newline]
+                     (Annotate id_y (Bracketed "d")))
+      ]
+  , testGroup "Precedence 7"
       [ testCase "a == b==c" $ parse expression "" "a == b==c" @?=
         (Right $ Equal (Equal id_a [] id_b) [] id_c)
       , testCase "a != b!=c" $ parse expression "" "a != b!=c" @?=

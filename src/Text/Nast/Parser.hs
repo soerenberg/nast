@@ -139,7 +139,10 @@ Precedence level 8 expressions
 * logical @&&@ op, binary infix, left associative; "and" conjunction
 -}
 precedence8 :: Parser (Expr Annotation)
-precedence8 = precedence7
+precedence8 = chainl1 precedence7 $ p
+  where p = do _ <- string "&&"
+               xs <- annotations
+               return $ (\l r -> And l xs r)
 
 {-|
 Precedence level 7 expressions

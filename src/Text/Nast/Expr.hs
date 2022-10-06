@@ -3,7 +3,11 @@ module Text.Nast.Expr
  ) where
 
 
-data Expr a = Equal                 -- ^ Equal comparison (@==@)
+data Expr a = And                   -- ^ Logical and conjunction (@&&@)
+              (Expr a)              -- ^ Left-hand side
+              [a]                   -- ^ Annotations after @&&@ symbol
+              (Expr a)              -- ^ Right-hand side
+            | Equal                 -- ^ Equal comparison (@==@)
               (Expr a)              -- ^ Left-hand side
               [a]                   -- ^ Annotations after @==@ symbol
               (Expr a)              -- ^ Right-hand side
