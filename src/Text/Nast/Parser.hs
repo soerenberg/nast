@@ -189,7 +189,7 @@ Precedence level 3 expressions
 * @%\%@ op, binary infix, left associative; integer division
 -}
 precedence3 :: Parser (Expr Annotation)
-precedence3 = precedence2
+precedence3 = chainl1 precedence2 $ binOp ["\\", "%\\%"]
 
 {-|
 Precedence level 2 expressions
@@ -298,6 +298,8 @@ binConstr xs = (flip Map.lookup toBinOp) <$> (foldl1 (<|>) $ map (try . string) 
           , ("/",  Div)
           , (".*", EltMul)
           , ("./", EltDiv)
+          , ("\\", LDiv)
+          , ("%\\%", IntDiv)
           ]
 
 eol :: Parser ()

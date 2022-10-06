@@ -94,6 +94,21 @@ tests =
       , testCase "p ./ q" $ parse expression "" "p ./ q" @?=
         (Right $ EltDiv id_p [] id_q)
       ]
+  , testGroup "Precedence 3"
+      [ testCase "3 \\ x" $ parse expression "" "3 \\ x" @?=
+        (Right $ LDiv lit_3 [] id_x)
+      , testCase "0%\\%1" $ parse expression "" "0%\\%1" @?=
+        (Right $ IntDiv lit_0 [] lit_1)
+      , testCase "annotated int div" $
+        parse expression "" "3 /*a*/ %\\% /*b*/ /*c*/\n1 /*d*/" @?=
+        (Right $ IntDiv (Annotate lit_3 (Bracketed "a"))
+                        [Bracketed "b", Bracketed "c", Newline]
+                        (Annotate lit_1 (Bracketed "d")))
+      , testCase "a \\ b + c" $ parse expression "" "a \\ b + c" @?=
+        (Right $ Add (LDiv id_a [] id_b) [] id_c)
+      , testCase "a + b %\\% c" $ parse expression "" "a + b %\\% c" @?=
+        (Right $ Add id_a [] (IntDiv id_b [] id_c))
+      ]
   , testGroup "literal"
       [ testCase "23" $ parse literal "" "23" @?=
         (Right $ NumLiteral "23" Nothing Nothing)

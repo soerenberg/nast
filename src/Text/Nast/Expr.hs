@@ -43,6 +43,14 @@ data Expr a = Gt                    -- ^ Greater than (@>@)
               (Expr a)              -- ^ left factor
               [a]                   -- ^ Annotations after @./@ symbol
               (Expr a)              -- ^ right factor
+            | LDiv                  -- ^ Left-division
+              (Expr a)              -- ^ left factor
+              [a]                   -- ^ Annotations after @\\@ symbol
+              (Expr a)              -- ^ right factor
+            | IntDiv                -- ^ Integer division
+              (Expr a)              -- ^ left factor
+              [a]                   -- ^ Annotations after @%\\%@ symbol
+              (Expr a)              -- ^ right factor
             | NumLiteral            -- ^ Numeric literal
                 String              -- ^ Digits before comma
                 (Maybe String)      -- ^ Decimal places after comma
