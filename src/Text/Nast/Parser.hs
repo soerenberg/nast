@@ -131,7 +131,10 @@ Precedence level 9 expressions
 * logical @||@ op, binary infix, left associative; "or" disjunction
 -}
 precedence9 :: Parser (Expr Annotation)
-precedence9 = precedence8
+precedence9 = chainl1 precedence8 $ p
+  where p = do _ <- string "||"
+               xs <- annotations
+               return $ (\l r -> Or l xs r)
 
 {-|
 Precedence level 8 expressions

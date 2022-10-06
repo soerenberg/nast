@@ -3,7 +3,11 @@ module Text.Nast.Expr
  ) where
 
 
-data Expr a = And                   -- ^ Logical and conjunction (@&&@)
+data Expr a = Or                    -- ^ Logical "or" disjunction (@!!@)
+              (Expr a)              -- ^ Left-hand side
+              [a]                   -- ^ Annotations after @!!@ symbol
+              (Expr a)              -- ^ Right-hand side
+            | And                   -- ^ Logical "and" conjunction (@&&@)
               (Expr a)              -- ^ Left-hand side
               [a]                   -- ^ Annotations after @&&@ symbol
               (Expr a)              -- ^ Right-hand side
