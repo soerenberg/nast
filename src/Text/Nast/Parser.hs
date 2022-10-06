@@ -117,13 +117,25 @@ expression = precedence10
 {-|
 Precedence level 10 expressions
 
-* Ternary @?~:@ op, ternary infix, right associative;
+* Ternary @?:@ op, ternary infix, right associative;
 
 Here, right associative means that @a ? b : c ? d : e@ is equivalent to
 @a ? b : (c ? d : e)@.
 -}
 precedence10 :: Parser (Expr Annotation)
-precedence10 = precedence9
+-- Here we try to ensure that the precedence9 expression is only parsed once.
+-- For a parser of the form @try conditional <|> precedence9@ this might happen
+-- twice if there is in fact no ternary @:?@ operation. However, this is
+-- unnecessarily expensive if the precedence9 expression is complex.
+precedence10 = do l <- precedence9
+                  p l <|> return l
+  where p l' = do _ <- char '?'
+                  xs <- annotations
+                  m <- precedence9
+                  _ <- char ':'
+                  ys <- annotations
+                  r <- precedence10
+                  return $ Conditional l' xs m ys r
 
 {-|
 Precedence level 9 expressions

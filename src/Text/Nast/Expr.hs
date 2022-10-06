@@ -3,7 +3,13 @@ module Text.Nast.Expr
  ) where
 
 
-data Expr a = Or                    -- ^ Logical "or" disjunction (@!!@)
+data Expr a = Conditional           -- ^ Ternary @?:@ conditional
+              (Expr a)              -- ^ Left-hand side (before @?@)
+              [a]                   -- ^ Annotations after @?@ symbol
+              (Expr a)              -- ^ Mid expression (after @?@, before @:@)
+              [a]                   -- ^ Annotations after @:@ symbol
+              (Expr a)              -- ^ Right-hand side (after @:@)
+            | Or                    -- ^ Logical "or" disjunction (@!!@)
               (Expr a)              -- ^ Left-hand side
               [a]                   -- ^ Annotations after @!!@ symbol
               (Expr a)              -- ^ Right-hand side

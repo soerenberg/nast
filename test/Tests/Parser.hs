@@ -20,7 +20,15 @@ import Data.Either (isLeft)
 
 tests :: [TestTree]
 tests =
-  [ testGroup "Precedence 9"
+  [ testGroup "Precedence 10"
+      [ testCase "a ? b : c" $ parse expression "" "a ? b : c" @?=
+        (Right $ Conditional id_a [] id_b [] id_c)
+      , testCase "a?b:c" $ parse expression "" "a?b:c" @?=
+        (Right $ Conditional id_a [] id_b [] id_c)
+      , testCase "associativity" $ parse expression "" "a?b:c?p:q" @?=
+        (Right $ Conditional id_a [] id_b [] (Conditional id_c [] id_p [] id_q))
+      ]
+  , testGroup "Precedence 9"
       [ testCase "a || b||c" $ parse expression "" "a || b||c" @?=
         (Right $ Or (Or id_a [] id_b) [] id_c)
       , testCase "a|| b ||c" $ parse expression "" "a|| b ||c" @?=
