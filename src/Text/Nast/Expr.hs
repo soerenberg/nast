@@ -3,7 +3,15 @@ module Text.Nast.Expr
  ) where
 
 
-data Expr a = Gt                    -- ^ Greater than (@>@)
+data Expr a = Equal                 -- ^ Equal comparison (@==@)
+              (Expr a)              -- ^ Left-hand side
+              [a]                   -- ^ Annotations after @==@ symbol
+              (Expr a)              -- ^ Right-hand side
+            | NotEqual              -- ^ Not-equal comparison (@!=@)
+              (Expr a)              -- ^ Left-hand side
+              [a]                   -- ^ Annotations after @!=@ symbol
+              (Expr a)              -- ^ Right-hand side
+            | Gt                    -- ^ Greater than (@>@)
               (Expr a)              -- ^ Left-hand side
               [a]                   -- ^ Annotations after @>@ symbol
               (Expr a)              -- ^ Right-hand side

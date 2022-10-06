@@ -20,7 +20,27 @@ import Data.Either (isLeft)
 
 tests :: [TestTree]
 tests =
-  [ testGroup "Precedence 6"
+  [ testGroup "Precedence 7"
+      [ testCase "a == b==c" $ parse expression "" "a == b==c" @?=
+        (Right $ Equal (Equal id_a [] id_b) [] id_c)
+      , testCase "a != b!=c" $ parse expression "" "a != b!=c" @?=
+        (Right $ NotEqual (NotEqual id_a [] id_b) [] id_c)
+      , testCase "a != b==c" $ parse expression "" "a != b==c" @?=
+        (Right $ Equal (NotEqual id_a [] id_b) [] id_c)
+      , testCase "a== b !=c" $ parse expression "" "a== b !=c" @?=
+        (Right $ NotEqual (Equal id_a [] id_b) [] id_c)
+      , testCase "annotated ==" $ parse expression ""
+                                  "x /*a*/ == /*b*/ /*c*/\ny /*d*/" @?=
+        (Right $ Equal (Annotate id_x (Bracketed "a"))
+                       [Bracketed "b", Bracketed "c", Newline]
+                       (Annotate id_y (Bracketed "d")))
+      , testCase "annotated !=" $ parse expression ""
+                                  "x /*a*/ != /*b*/ /*c*/\ny /*d*/" @?=
+        (Right $ NotEqual (Annotate id_x (Bracketed "a"))
+                          [Bracketed "b", Bracketed "c", Newline]
+                          (Annotate id_y (Bracketed "d")))
+      ]
+  , testGroup "Precedence 6"
       [ testCase "a > b > c" $ parse expression "" "a > b > c" @?=
         (Right $ Gt (Gt id_a [] id_b) [] id_c)
       , testCase "a >= b >= c" $ parse expression "" "a >= b >= c" @?=

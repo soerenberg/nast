@@ -148,7 +148,7 @@ Precedence level 7 expressions
 * logical @!=@ op, binary infix, left associative; not equal to
 -}
 precedence7 :: Parser (Expr Annotation)
-precedence7 = precedence6
+precedence7 = chainl1 precedence6 $ binOp ["!=", "=="]
 
 {-|
 Precedence level 6 expressions
@@ -291,7 +291,9 @@ binConstr :: [String]  -- ^ List of expected symbols, e.g. @["+", "-"]@.
 binConstr xs = (flip Map.lookup toBinOp) <$> (foldl1 (<|>) $ map (try . string) xs)
   where toBinOp :: Map.Map String (Expr a -> [a] -> Expr a -> Expr a)
         toBinOp = Map.fromList
-          [ (">",    Gt)
+          [ ("==",   Equal)
+          , ("!=",   NotEqual)
+          , (">",    Gt)
           , (">=",   Geq)
           , ("<",    Lt)
           , ("<=",   Leq)
