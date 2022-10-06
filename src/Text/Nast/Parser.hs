@@ -208,7 +208,7 @@ Precedence level 1 expressions
 * @.^@ op, binary infix, right associative; element-wise exponentiation
 -}
 precedence1 :: Parser (Expr Annotation)
-precedence1 = precedence0
+precedence1 = chainl1 precedence0 $ binOp [".^", "^"]
 
 {-|
 Precedence level 0 expressions
@@ -288,18 +288,20 @@ binConstr :: [String]  -- ^ List of expected symbols, e.g. @["+", "-"]@.
 binConstr xs = (flip Map.lookup toBinOp) <$> (foldl1 (<|>) $ map (try . string) xs)
   where toBinOp :: Map.Map String (Expr a -> [a] -> Expr a -> Expr a)
         toBinOp = Map.fromList
-          [ (">",  Gt)
-          , (">=", Geq)
-          , ("<",  Lt)
-          , ("<=", Leq)
-          , ("+",  Add)
-          , ("-",  Sub)
-          , ("*",  Mul)
-          , ("/",  Div)
-          , (".*", EltMul)
-          , ("./", EltDiv)
-          , ("\\", LDiv)
+          [ (">",    Gt)
+          , (">=",   Geq)
+          , ("<",    Lt)
+          , ("<=",   Leq)
+          , ("+",    Add)
+          , ("-",    Sub)
+          , ("*",    Mul)
+          , ("/",    Div)
+          , (".*",   EltMul)
+          , ("./",   EltDiv)
+          , ("\\",   LDiv)
           , ("%\\%", IntDiv)
+          , ("^",    Pow)
+          , (".^",   EltPow)
           ]
 
 eol :: Parser ()

@@ -51,6 +51,14 @@ data Expr a = Gt                    -- ^ Greater than (@>@)
               (Expr a)              -- ^ left factor
               [a]                   -- ^ Annotations after @%\\%@ symbol
               (Expr a)              -- ^ right factor
+            | Pow                   -- ^ Exponentiation (@^@)
+              (Expr a)              -- ^ base
+              [a]                   -- ^ Annotations after @^@ symbol
+              (Expr a)              -- ^ exponent
+            | EltPow                -- ^ Element-wise exponentiation (@.^@)
+              (Expr a)              -- ^ base
+              [a]                   -- ^ Annotations after @.^@ symbol
+              (Expr a)              -- ^ exponent
             | NumLiteral            -- ^ Numeric literal
                 String              -- ^ Digits before comma
                 (Maybe String)      -- ^ Decimal places after comma
