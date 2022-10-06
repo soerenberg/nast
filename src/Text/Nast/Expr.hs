@@ -19,35 +19,35 @@ data Expr a = Gt                    -- ^ Greater than (@>@)
               (Expr a)              -- ^ Left-hand side
               [a]                   -- ^ Annotations after @<=@ symbol
               (Expr a)              -- ^ Right-hand side
-            | Add                   -- ^ Addition
+            | Add                   -- ^ Addition (@+@)
               (Expr a)              -- ^ left summand
               [a]                   -- ^ Annotations after @+@ symbol
               (Expr a)              -- ^ right summand
-            | Sub                   -- ^ Subtraction
+            | Sub                   -- ^ Subtraction (@-@)
               (Expr a)              -- ^ left summand
               [a]                   -- ^ Annotations after @-@ symbol
               (Expr a)              -- ^ right summand
-            | Mul                   -- ^ Multiplication
+            | Mul                   -- ^ Multiplication (@*@)
               (Expr a)              -- ^ left factor
               [a]                   -- ^ Annotations after @*@ symbol
               (Expr a)              -- ^ right factor
-            | Div                   -- ^ Division
+            | Div                   -- ^ Division (@/@)
               (Expr a)              -- ^ left factor
               [a]                   -- ^ Annotations after @/@ symbol
               (Expr a)              -- ^ right factor
-            | EltMul                -- ^ Element-wise multiplication
+            | EltMul                -- ^ Element-wise multiplication (@.*@)
               (Expr a)              -- ^ left factor
               [a]                   -- ^ Annotations after @.*@ symbol
               (Expr a)              -- ^ right factor
-            | EltDiv                -- ^ Element-wise division
+            | EltDiv                -- ^ Element-wise division (@./@)
               (Expr a)              -- ^ left factor
               [a]                   -- ^ Annotations after @./@ symbol
               (Expr a)              -- ^ right factor
-            | LDiv                  -- ^ Left-division
+            | LDiv                  -- ^ Left-division (@\\@)
               (Expr a)              -- ^ left factor
               [a]                   -- ^ Annotations after @\\@ symbol
               (Expr a)              -- ^ right factor
-            | IntDiv                -- ^ Integer division
+            | IntDiv                -- ^ Integer division (@%\\%@)
               (Expr a)              -- ^ left factor
               [a]                   -- ^ Annotations after @%\\%@ symbol
               (Expr a)              -- ^ right factor
