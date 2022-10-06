@@ -22,87 +22,77 @@ tests :: [TestTree]
 tests =
   [ testGroup "Precedence 6"
       [ testCase "a > b > c" $ parse expression "" "a > b > c" @?=
-        (Right $ Gt (Gt (Identifier "a") [] (Identifier "b")) []
-                    (Identifier "c"))
+        (Right $ Gt (Gt id_a [] id_b) [] id_c)
       , testCase "a >= b >= c" $ parse expression "" "a >= b >= c" @?=
-        (Right $ Geq (Geq (Identifier "a") [] (Identifier "b")) []
-                     (Identifier "c"))
+        (Right $ Geq (Geq id_a [] id_b) [] id_c)
       , testCase "a < b < c" $ parse expression "" "a < b < c" @?=
-        (Right $ Lt (Lt (Identifier "a") [] (Identifier "b")) []
-                    (Identifier "c"))
+        (Right $ Lt (Lt id_a [] id_b) [] id_c)
       , testCase "a <= b <= c" $ parse expression "" "a <= b <= c" @?=
-        (Right $ Leq (Leq (Identifier "a") [] (Identifier "b")) []
-                     (Identifier "c"))
+        (Right $ Leq (Leq id_a [] id_b) [] id_c)
       , testCase "annotated Gt" $ parse expression ""
                                   "x /*a*/ > /*b*/ /*c*/\ny /*d*/" @?=
-        (Right $ Gt (Annotate (Identifier "x") (Bracketed "a"))
+        (Right $ Gt (Annotate id_x (Bracketed "a"))
                     [Bracketed "b", Bracketed "c", Newline]
-                    (Annotate (Identifier "y") (Bracketed "d")))
+                    (Annotate id_y (Bracketed "d")))
       , testCase "annotated Geq" $ parse expression ""
                                   "x /*a*/ >= /*b*/ /*c*/\ny /*d*/" @?=
-        (Right $ Geq (Annotate (Identifier "x") (Bracketed "a"))
+        (Right $ Geq (Annotate id_x (Bracketed "a"))
                      [Bracketed "b", Bracketed "c", Newline]
-                     (Annotate (Identifier "y") (Bracketed "d")))
+                     (Annotate id_y (Bracketed "d")))
       , testCase "annotated Lt" $ parse expression ""
                                   "x /*a*/ < /*b*/ /*c*/\ny /*d*/" @?=
-        (Right $ Lt (Annotate (Identifier "x") (Bracketed "a"))
+        (Right $ Lt (Annotate id_x (Bracketed "a"))
                     [Bracketed "b", Bracketed "c", Newline]
-                    (Annotate (Identifier "y") (Bracketed "d")))
+                    (Annotate id_y (Bracketed "d")))
       , testCase "annotated Leq" $ parse expression ""
                                   "x /*a*/ <= /*b*/ /*c*/\ny /*d*/" @?=
-        (Right $ Leq (Annotate (Identifier "x") (Bracketed "a"))
+        (Right $ Leq (Annotate id_x (Bracketed "a"))
                      [Bracketed "b", Bracketed "c", Newline]
-                     (Annotate (Identifier "y") (Bracketed "d")))
+                     (Annotate id_y (Bracketed "d")))
 
       ]
   , testGroup "Precedence 5"
-      [ testCase "3 + 4" $ parse expression "" "3 + 4" @?=
-        (Right $ Add (NumLiteral "3" Nothing Nothing) [] (NumLiteral "4" Nothing Nothing))
+      [ testCase "p + q" $ parse expression "" "p + q" @?=
+        (Right $ Add id_p [] id_q)
       , testCase "0+1" $ parse expression "" "0+1" @?=
-        (Right $ Add (NumLiteral "0" Nothing Nothing) [] (NumLiteral "1" Nothing Nothing))
-      , testCase "annotated addition" $ parse expression "" "3 /*a*/ + /*b*/ /*c*/\n4 /*d*/" @?=
-        (Right $ Add (Annotate (NumLiteral "3" Nothing Nothing) (Bracketed "a"))
+        (Right $ Add lit_0 [] lit_1)
+      , testCase "annotated addition" $
+        parse expression "" "3 /*a*/ + /*b*/ /*c*/\n1 /*d*/" @?=
+        (Right $ Add (Annotate lit_3 (Bracketed "a"))
                      [Bracketed "b", Bracketed "c", Newline]
-                     (Annotate (NumLiteral "4" Nothing Nothing) (Bracketed "d")))
+                     (Annotate lit_1 (Bracketed "d")))
       , testCase "1 +2 +  3" $ parse expression "" "1 +2 +  3" @?=
-        (Right $ Add (Add (NumLiteral "1" Nothing Nothing) []
-                          (NumLiteral "2" Nothing Nothing))
-                     [] (NumLiteral "3" Nothing Nothing))
+        (Right $ Add (Add lit_1 [] lit_2) [] lit_3)
       , testCase "3 - 4" $ parse expression "" "3 - 4" @?=
-        (Right $ Sub (NumLiteral "3" Nothing Nothing) [] (NumLiteral "4" Nothing Nothing))
+        (Right $ Sub lit_3 [] (NumLiteral "4" Nothing Nothing))
       , testCase "0-1" $ parse expression "" "0-1" @?=
-        (Right $ Sub (NumLiteral "0" Nothing Nothing) [] (NumLiteral "1" Nothing Nothing))
-      , testCase "annotated subtraction" $ parse expression "" "3 /*a*/ - /*b*/ /*c*/\n4 /*d*/" @?=
-        (Right $ Sub (Annotate (NumLiteral "3" Nothing Nothing) (Bracketed "a"))
+        (Right $ Sub lit_0 [] lit_1)
+      , testCase "annotated subtraction" $
+        parse expression "" "3 /*a*/ - /*b*/ /*c*/\n2 /*d*/" @?=
+        (Right $ Sub (Annotate lit_3 (Bracketed "a"))
                      [Bracketed "b", Bracketed "c", Newline]
-                     (Annotate (NumLiteral "4" Nothing Nothing) (Bracketed "d")))
+                     (Annotate lit_2 (Bracketed "d")))
       , testCase "1 -2 +  3" $ parse expression "" "1 -2 +  3" @?=
-        (Right $ Add (Sub (NumLiteral "1" Nothing Nothing) []
-                          (NumLiteral "2" Nothing Nothing))
-                     [] (NumLiteral "3" Nothing Nothing))
+        (Right $ Add (Sub lit_1 [] lit_2) [] lit_3)
       ]
   , testGroup "Precedence 4"
       [ testCase "3 * x" $ parse expression "" "3 * x" @?=
-        (Right $ Mul (NumLiteral "3" Nothing Nothing) [] (Identifier "x"))
+        (Right $ Mul lit_3 [] id_x)
       , testCase "0*1" $ parse expression "" "0*1" @?=
-        (Right $ Mul (NumLiteral "0" Nothing Nothing) []
-                     (NumLiteral "1" Nothing Nothing))
+        (Right $ Mul lit_0 [] lit_1)
       , testCase "annotated multiplication" $
-        parse expression "" "3 /*a*/ * /*b*/ /*c*/\n4 /*d*/" @?=
-        (Right $ Mul (Annotate (NumLiteral "3" Nothing Nothing) (Bracketed "a"))
+        parse expression "" "3 /*a*/ * /*b*/ /*c*/\n1 /*d*/" @?=
+        (Right $ Mul (Annotate lit_3 (Bracketed "a"))
                      [Bracketed "b", Bracketed "c", Newline]
-                     (Annotate (NumLiteral "4" Nothing Nothing)
-                               (Bracketed "d")))
+                     (Annotate lit_1 (Bracketed "d")))
       , testCase "a * b + c" $ parse expression "" "a * b + c" @?=
-        (Right $ Add (Mul (Identifier "a") [] (Identifier "b")) []
-                     (Identifier "c"))
+        (Right $ Add (Mul id_a [] id_b) [] id_c)
       , testCase "a + b / c" $ parse expression "" "a + b / c" @?=
-        (Right $ Add (Identifier "a") []
-                     (Div (Identifier "b") [] (Identifier "c")))
+        (Right $ Add id_a [] (Div id_b [] id_c))
       , testCase "p .* q" $ parse expression "" "p .* q" @?=
-        (Right $ EltMul (Identifier "p") [] (Identifier "q"))
+        (Right $ EltMul id_p [] id_q)
       , testCase "p ./ q" $ parse expression "" "p ./ q" @?=
-        (Right $ EltDiv (Identifier "p") [] (Identifier "q"))
+        (Right $ EltDiv id_p [] id_q)
       ]
   , testGroup "literal"
       [ testCase "23" $ parse literal "" "23" @?=
@@ -135,14 +125,11 @@ tests =
         (Right $ Parens [] $ NumLiteral "3" Nothing Nothing)
     , testCase "(//ab\\n 1 ) /*xy*/" $
         parse expression "" "(//ab\n 1 ) /*xy*/" @?=
-        (Right $ Annotate (Parens [LineBased "ab"]
-                                  (NumLiteral "1" Nothing Nothing))
-                          (Bracketed "xy"))
+        (Right $ Annotate (Parens [LineBased "ab"] lit_1) (Bracketed "xy"))
     , testCase "(\\n3)" $ parse expression "" "(\n3)" @?=
-        (Right $ Parens [Newline] (NumLiteral "3" Nothing Nothing))
+        (Right $ Parens [Newline] lit_3)
     , testCase "(/*a*/ /*b*/\\n3)" $ parse expression "" "(/*a*/ /*b*/\n3)" @?=
-        (Right $ Parens [Bracketed "a", Bracketed "b", Newline]
-                        (NumLiteral "3" Nothing Nothing))
+        (Right $ Parens [Bracketed "a", Bracketed "b", Newline] lit_3)
     ]
   , testGroup "identifier"
     [ testCase "a" $ parse expression "" "a" @?=
@@ -172,11 +159,9 @@ tests =
     ]
   , testGroup "annotated"
     [ testCase "literal 1 comment" $ parse literal "" "1//abc" @?=
-      (Right $ Annotate (NumLiteral "1" Nothing Nothing) (LineBased "abc"))
+      (Right $ Annotate lit_1 (LineBased "abc"))
     , testCase "literal 2 comments" $ parse literal "" "1 /* ab */ // xyz" @?=
-      (Right $ Annotate
-        (Annotate (NumLiteral "1" Nothing Nothing) (Bracketed " ab "))
-        (LineBased " xyz"))
+      (Right $ Annotate (Annotate lit_1 (Bracketed " ab ")) (LineBased " xyz"))
     ]
   , testGroup "whitespace"
     [ testCase "''" $ parse whitespace "" "" @?= Right ""
@@ -185,3 +170,38 @@ tests =
     , testCase "no newline" $ parse whitespace "" " \n" @?= Right " "
     ]
   ]
+
+
+{- definitions of expressions, for readability -}
+id_a :: Expr Annotation
+id_a = Identifier "a"
+
+id_b :: Expr Annotation
+id_b = Identifier "b"
+
+id_c :: Expr Annotation
+id_c = Identifier "c"
+
+id_x :: Expr Annotation
+id_x = Identifier "x"
+
+id_y :: Expr Annotation
+id_y = Identifier "y"
+
+id_p :: Expr Annotation
+id_p = Identifier "p"
+
+id_q :: Expr Annotation
+id_q = Identifier "q"
+
+lit_0 :: Expr Annotation
+lit_0 = NumLiteral "0" Nothing Nothing
+
+lit_1 :: Expr Annotation
+lit_1 = NumLiteral "1" Nothing Nothing
+
+lit_2 :: Expr Annotation
+lit_2 = NumLiteral "2" Nothing Nothing
+
+lit_3 :: Expr Annotation
+lit_3 = NumLiteral "3" Nothing Nothing
