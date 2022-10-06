@@ -51,6 +51,15 @@ data Expr a = Gt                    -- ^ Greater than (@>@)
               (Expr a)              -- ^ left factor
               [a]                   -- ^ Annotations after @%\\%@ symbol
               (Expr a)              -- ^ right factor
+            | LogicalNeg            -- ^ Logical negation (@!@)
+              [a]                   -- ^ Annotations after @!@ symbol
+              (Expr a)              -- ^ Right-hand side
+            | UnaryPlus             -- ^ Promotion (prefix @+@), no-op
+              [a]                   -- ^ Annotations after @+@ symbol
+              (Expr a)              -- ^ Right-hand side
+            | UnaryMinus            -- ^ Arithmetic negation (prefix @-@)
+              [a]                   -- ^ Annotations after @-@ symbol
+              (Expr a)              -- ^ Right-hand side
             | Pow                   -- ^ Exponentiation (@^@)
               (Expr a)              -- ^ base
               [a]                   -- ^ Annotations after @^@ symbol

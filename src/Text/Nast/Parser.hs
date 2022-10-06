@@ -199,7 +199,10 @@ Precedence level 2 expressions
 * @-@ op, unary prefix; negation
 -}
 precedence2 :: Parser (Expr Annotation)
-precedence2 = precedence1
+precedence2 = lneg <|> plus <|> minus <|> precedence1
+  where lneg  = char '!' >> LogicalNeg <$> annotations <*> precedence2
+        plus  = char '+' >> UnaryPlus <$> annotations <*> precedence2
+        minus = char '-' >> UnaryMinus <$> annotations <*> precedence2
 
 {-|
 Precedence level 1 expressions

@@ -130,6 +130,22 @@ tests =
       , testCase "a + b .^ c" $ parse expression "" "a + b .^ c" @?=
         (Right $ Add id_a [] (EltPow id_b [] id_c))
       ]
+  , testGroup "Precedence 2"
+      [ testCase "!a" $ parse expression "" "!a" @?=
+        (Right $ LogicalNeg [] id_a)
+      , testCase "+a" $ parse expression "" "+a" @?=
+        (Right $ UnaryPlus [] id_a)
+      , testCase "-a" $ parse expression "" "-a" @?=
+        (Right $ UnaryMinus [] id_a)
+      , testCase "-!+a" $ parse expression "" "-!+a" @?=
+        (Right $ UnaryMinus [] $ LogicalNeg [] $ UnaryPlus [] id_a)
+      , testCase "+ /*xy*/ p //uv" $ parse expression "" "+ /*xy*/ p //uv" @?=
+        (Right $ UnaryPlus [Bracketed "xy"] (Annotate id_p (LineBased "uv")))
+      , testCase "- /*xy*/ p //uv" $ parse expression "" "- /*xy*/ p //uv" @?=
+        (Right $ UnaryMinus [Bracketed "xy"] (Annotate id_p (LineBased "uv")))
+      , testCase "! /*xy*/ p //uv" $ parse expression "" "! /*xy*/ p //uv" @?=
+        (Right $ LogicalNeg [Bracketed "xy"] (Annotate id_p (LineBased "uv")))
+      ]
   , testGroup "literal"
       [ testCase "23" $ parse literal "" "23" @?=
         (Right $ NumLiteral "23" Nothing Nothing)
