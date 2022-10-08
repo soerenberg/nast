@@ -5,101 +5,102 @@ module Text.Nast.Expr
 
 data Expr a = Conditional           -- ^ Ternary @?:@ conditional
               (Expr a)              -- ^ Left-hand side (before @?@)
-              a                     -- ^ Annotations after @?@ symbol
               (Expr a)              -- ^ Mid expression (after @?@, before @:@)
-              a                     -- ^ Annotations after @:@ symbol
               (Expr a)              -- ^ Right-hand side (after @:@)
+              a                     -- ^ annotation
             | Or                    -- ^ Logical "or" disjunction (@!!@)
               (Expr a)              -- ^ Left-hand side
-              a                     -- ^ Annotations after @!!@ symbol
               (Expr a)              -- ^ Right-hand side
+              a                     -- ^ annotation
             | And                   -- ^ Logical "and" conjunction (@&&@)
               (Expr a)              -- ^ Left-hand side
-              a                     -- ^ Annotations after @&&@ symbol
               (Expr a)              -- ^ Right-hand side
+              a                     -- ^ annotation
             | Equal                 -- ^ Equal comparison (@==@)
               (Expr a)              -- ^ Left-hand side
-              a                     -- ^ Annotations after @==@ symbol
               (Expr a)              -- ^ Right-hand side
+              a                     -- ^ annotation
             | NotEqual              -- ^ Not-equal comparison (@!=@)
               (Expr a)              -- ^ Left-hand side
-              a                     -- ^ Annotations after @!=@ symbol
               (Expr a)              -- ^ Right-hand side
+              a                     -- ^ annotation
             | Gt                    -- ^ Greater than (@>@)
               (Expr a)              -- ^ Left-hand side
-              a                     -- ^ Annotations after @>@ symbol
               (Expr a)              -- ^ Right-hand side
+              a                     -- ^ annotation
             | Geq                   -- ^ Greater or equal than (@>=@)
               (Expr a)              -- ^ Left-hand side
-              a                     -- ^ Annotations after @>=@ symbol
               (Expr a)              -- ^ Right-hand side
+              a                     -- ^ annotation
             | Lt                    -- ^ Less than (@<@)
               (Expr a)              -- ^ Left-hand side
-              a                     -- ^ Annotations after @<@ symbol
               (Expr a)              -- ^ Right-hand side
+              a                     -- ^ annotation
             | Leq                   -- ^ Less or equal than (@<=@)
               (Expr a)              -- ^ Left-hand side
-              a                     -- ^ Annotations after @<=@ symbol
               (Expr a)              -- ^ Right-hand side
+              a                     -- ^ annotation
             | Add                   -- ^ Addition (@+@)
               (Expr a)              -- ^ left summand
-              a                     -- ^ Annotations after @+@ symbol
               (Expr a)              -- ^ right summand
+              a                     -- ^ annotation
             | Sub                   -- ^ Subtraction (@-@)
               (Expr a)              -- ^ left summand
-              a                     -- ^ Annotations after @-@ symbol
               (Expr a)              -- ^ right summand
+              a                     -- ^ annotation
             | Mul                   -- ^ Multiplication (@*@)
               (Expr a)              -- ^ left factor
-              a                     -- ^ Annotations after @*@ symbol
               (Expr a)              -- ^ right factor
+              a                     -- ^ annotation
             | Div                   -- ^ Division (@/@)
               (Expr a)              -- ^ left factor
-              a                     -- ^ Annotations after @/@ symbol
               (Expr a)              -- ^ right factor
+              a                     -- ^ annotation
             | EltMul                -- ^ Element-wise multiplication (@.*@)
               (Expr a)              -- ^ left factor
-              a                     -- ^ Annotations after @.*@ symbol
               (Expr a)              -- ^ right factor
+              a                     -- ^ annotation
             | EltDiv                -- ^ Element-wise division (@./@)
               (Expr a)              -- ^ left factor
-              a                     -- ^ Annotations after @./@ symbol
               (Expr a)              -- ^ right factor
+              a                     -- ^ annotation
             | LDiv                  -- ^ Left-division (@\\@)
               (Expr a)              -- ^ left factor
-              a                     -- ^ Annotations after @\\@ symbol
               (Expr a)              -- ^ right factor
+              a                     -- ^ annotation
             | IntDiv                -- ^ Integer division (@%\\%@)
               (Expr a)              -- ^ left factor
-              a                     -- ^ Annotations after @%\\%@ symbol
               (Expr a)              -- ^ right factor
+              a                     -- ^ annotation
             | LogicalNeg            -- ^ Logical negation (@!@)
-              a                     -- ^ Annotations after @!@ symbol
               (Expr a)              -- ^ Right-hand side
+              a                     -- ^ annotation
             | UnaryPlus             -- ^ Promotion (prefix @+@), no-op
-              a                     -- ^ Annotations after @+@ symbol
               (Expr a)              -- ^ Right-hand side
+              a                     -- ^ annotation
             | UnaryMinus            -- ^ Arithmetic negation (prefix @-@)
-              a                     -- ^ Annotations after @-@ symbol
               (Expr a)              -- ^ Right-hand side
+              a                     -- ^ annotation
             | Pow                   -- ^ Exponentiation (@^@)
               (Expr a)              -- ^ base
-              a                     -- ^ Annotations after @^@ symbol
               (Expr a)              -- ^ exponent
+              a                     -- ^ annotation
             | EltPow                -- ^ Element-wise exponentiation (@.^@)
               (Expr a)              -- ^ base
-              a                     -- ^ Annotations after @.^@ symbol
               (Expr a)              -- ^ exponent
+              a                     -- ^ annotation
             | NumLiteral            -- ^ Numeric literal
-                String              -- ^ Digits before comma
-                (Maybe String)      -- ^ Decimal places after comma
-                (Maybe String)      -- ^ Exponent
-            | StringLiteral String  -- ^ String literal
+              String                -- ^ Digits before comma
+              (Maybe String)        -- ^ Decimal places after comma
+              (Maybe String)        -- ^ Exponent
+              a                     -- ^ annotation
+            | StringLiteral         -- ^ String literal
+              String                -- ^ literal
+              a                     -- ^ annotation
             | Parens                -- ^ Parentheses expression
-              a                     -- ^ Annotations after opening @(@
               (Expr a)              -- ^ Expression to be parenthesized
-            | Identifier String     -- ^ Identifier
-            | Annotate              -- ^ Annotation node
-              (Expr a)              -- ^ Expression to be annotated
-              a                     -- ^ Annotation
+              a                     -- ^ annotation
+            | Identifier            -- ^ Identifier
+              String                -- ^ name
+              a                     -- ^ annotation
             deriving (Eq, Show)
