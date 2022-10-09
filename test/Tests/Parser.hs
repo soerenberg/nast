@@ -383,6 +383,18 @@ tests =
       parse statement "" "return/*A*/;/*B*/" @?=
       (Right $ Return $ KeywordAnn [Bracketed "A"] [Bracketed "B"])
     ]
+  , testGroup "block"
+    [ testCase "{}" $ parse statement "" "{}" @?=
+      (Right $ Block [] (BlockAnn [] []))
+    , testCase "{return; continue; }" $
+      parse statement "" "{return; continue; }" @?=
+      (Right $ Block [Return (KeywordAnn [] []), Continue (KeywordAnn [] [])]
+               (BlockAnn [] []))
+    , testCase "{/*A*/return; } /*B*/" $
+      parse statement "" "{/*A*/return; } /*B*/" @?=
+      (Right $ Block [Return (KeywordAnn [] [])]
+               (BlockAnn [Bracketed "A"] [Bracketed "B"]))
+    ]
   ]
 
 

@@ -128,4 +128,7 @@ data Stmt a = Break     -- ^ @break@ statement
               a         -- ^ annotation
             | Return    -- @return@ statement
               a         -- ^ annotation
+            | Block     -- ^ Block statement (@{..}@)
+              [Stmt a]  -- ^ statements inside curly braces
+              a         -- ^ annotation
             deriving (Eq, Show)

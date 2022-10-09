@@ -39,6 +39,7 @@ module Text.Nast.Parser (
   -- * statements
   , statement
   , keyword
+  , block
   ) where
 
 
@@ -423,6 +424,7 @@ statement :: Parser (Stmt ASTAnnotation)
 statement =   (keyword "break" Break)
           <|> (keyword "continue" Continue)
           <|> (keyword "return" Return)
+          <|> block
 
 -- | Parse keyword statement such as @break@ or @continue@
 keyword :: String                                 -- ^ keyword name
@@ -434,4 +436,11 @@ keyword k constr = do _ <- string k
                       ys <- codeAnnotations
                       return $ constr $ KeywordAnn xs ys
 
-
+-- | Parse block statement
+block :: Parser (Stmt ASTAnnotation)
+block = do _ <- char '{'
+           xs <- codeAnnotations
+           stmts <- many statement
+           _ <- char '}'
+           ys <- codeAnnotations
+           return $ Block stmts $ BlockAnn xs ys

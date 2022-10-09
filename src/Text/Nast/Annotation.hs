@@ -24,6 +24,9 @@ data ASTAnnotation = PrimaryAnn          -- ^ Primary expressions
                    | KeywordAnn          -- ^ Keyword statements like @break@
                      [CodeAnnotation]    -- ^ succeeding the keyword
                      [CodeAnnotation]    -- ^ succeeding the semicolon
+                   | BlockAnn            -- ^ Block statements (@{..}@)
+                     [CodeAnnotation]    -- ^ succeeding opening @{@
+                     [CodeAnnotation]    -- ^ succeeding closing @}@
                    deriving (Eq, Show)
 
 -- | Annotations of source code (comments, linebreaks)
