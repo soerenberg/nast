@@ -7,6 +7,7 @@ import Text.Nast.Parser
   , identifier
   , literal
   , codeAnnotations
+  , range
   , whitespace
   )
 
@@ -260,6 +261,78 @@ tests =
     , testCase "fail 12ab" $ assertBool "" (isLeft $ parse identifier "" "12ab")
     , testCase "fail _xy" $ assertBool "" (isLeft $ parse identifier "" "_xy")
     , testCase "fail ab__" $ assertBool "" (isLeft $ parse identifier "" "ab__")
+    ]
+  , testGroup "Precedence 0"
+    [ testCase "abc()" $ parse expression "" "abc()" @?=
+        (Right $ Call (Identifier "abc" noPA) [] (CallAnn [[]] []))
+    , testCase "f(/*xy*/)" $ parse expression "" "f(/*xy*/)" @?=
+        (Right $ Call (Identifier "f" noPA) [] (CallAnn [[Bracketed "xy"]] []))
+    , testCase "f(a, b , c)" $ parse expression "" "f(a, b , c)" @?=
+        (Right $ Call (Identifier "f" noPA)
+                      [ Identifier "a" noPA
+                      , Identifier "b" noPA
+                      , Identifier "c" noPA]
+                      (CallAnn [[], [], []] []))
+    , testCase "f /*ab*/ ( /*xy*/) /*pq*/" $
+        parse expression "" "f /*ab*/ ( /*xy*/) /*pq*/" @?=
+        (Right $ Call (Identifier "f" (PrimaryAnn [Bracketed "ab"]))
+                      [] (CallAnn [[Bracketed "xy"]] [Bracketed "pq"]))
+    , testCase "f(/*A*/a //x\\n,b , /*D*/ c)" $
+        parse expression "" "f(/*A*/a //x\n,b , /*D*/ c)" @?=
+        (Right $ Call (Identifier "f" noPA)
+                      [ Identifier "a" (PrimaryAnn [LineBased "x"])
+                      , Identifier "b" noPA
+                      , Identifier "c" noPA]
+                      (CallAnn [[Bracketed "A"], [], [Bracketed "D"]] []))
+    , testCase "M'" $ parse expression "" "M'" @?=
+        (Right $ Transpose (Identifier "M" noPA) (UnaryAnn []))
+    , testCase "M/*a*/'/*b*/" $ parse expression "" "M/*a*/'/*b*/" @?=
+        (Right $ Transpose (Identifier "M" (PrimaryAnn [Bracketed "a"]))
+                           (UnaryAnn [Bracketed "b"]))
+    , testCase "x[]" $ parse expression "" "x[]" @?=
+        (Right $ Index id_x [] (CallAnn [[]] []))
+    , testCase "x[/*A*/]" $ parse expression "" "x[/*A*/]" @?=
+        (Right $ Index id_x [] (CallAnn [[Bracketed "A"]] []))
+    , testCase "x[3]" $ parse expression "" "x[3]" @?=
+        (Right $ Index id_x [lit_3] (CallAnn [[]] []))
+    , testCase "x[2,1]" $ parse expression "" "x[3,1]" @?=
+        (Right $ Index id_x [lit_3, lit_1] (CallAnn [[], []] []))
+    , testCase "x [ 2 , 1 ]" $ parse expression "" "x [ 3 , 1 ]" @?=
+        (Right $ Index id_x [lit_3, lit_1] (CallAnn [[], []] []))
+    , testCase "x/*A*/[/*B*/a/*C*/,/*D*/b/*E*/]/*F*/" $
+        parse expression "" "x/*A*/[/*B*/a/*C*/,/*D*/b/*E*/]/*F*/" @?=
+        (Right $ Index (Identifier "x" (PrimaryAnn [Bracketed "A"]))
+                       [ Identifier "a" (PrimaryAnn [Bracketed "C"])
+                       , Identifier "b" (PrimaryAnn [Bracketed "E"])]
+                       (CallAnn [[Bracketed "B"], [Bracketed "D"]]
+                                [Bracketed "F"]))
+    , testCase "x[a/*A*/:/*B*/b/*C*/]" $
+        parse expression "" "x[a/*A*/:/*B*/b/*C*/]" @?=
+        (Right $ Index id_x
+            [ Range (Just $ Identifier "a" (PrimaryAnn [Bracketed "A"]))
+                    (Just $ Identifier "b" (PrimaryAnn [Bracketed "C"]))
+                    (BinaryAnn [Bracketed "B"])
+            ] (CallAnn [[]] []))
+    , testCase "x[a:b,p:q]" $
+        parse expression "" "x[a:b,p:q]" @?=
+        (Right $ Index id_x
+            [ Range (Just $ id_a) (Just $ id_b) (BinaryAnn [])
+            , Range (Just $ id_p) (Just $ id_q) (BinaryAnn [])
+            ] (CallAnn [[], []] []))
+    ]
+  , testGroup "range"
+    [ testCase "range a" $ parse range "" "a" @?= (Right $ id_a)
+    , testCase "range 1" $ parse range "" "1" @?= (Right $ lit_1)
+    , testCase "range a:b" $ parse range "" "a:b" @?=
+        (Right $ Range (Just id_a) (Just id_b) noBA)
+    , testCase "range a:b" $ parse range "" "a:b" @?=
+        (Right $ Range (Just id_a) (Just id_b) noBA)
+    , testCase "range :b" $ parse range "" ":b" @?=
+        (Right $ Range Nothing (Just id_b) noBA)
+    , testCase "range a:" $ parse range "" "a:" @?=
+        (Right $ Range (Just id_a) Nothing noBA)
+    , testCase "range ':'" $ parse range "" ":" @?=
+        (Right $ Range Nothing Nothing noBA)
     ]
   , testGroup "codeAnnotations"
     [ testCase "//" $ parse codeAnnotations "" "//" @?= (Right [LineBased ""])

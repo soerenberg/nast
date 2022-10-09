@@ -17,6 +17,11 @@ module Text.Nast.Parser (
   , precedence2
   , precedence1
   , precedence0
+  , completeCall
+  , completeIndex
+  , CallLikeConstr
+  , callLike
+  , range
   , primary
   , identifier
   , parentheses
@@ -51,6 +56,7 @@ import Text.ParserCombinators.Parsec
   , noneOf
   , oneOf
   , optionMaybe
+  , sepBy
   , sepEndBy
   , string
   , try
@@ -216,7 +222,77 @@ Precedence level 0 expressions
 * @[]@ array & matrix indexing
 -}
 precedence0 :: Parser (Expr ASTAnnotation)
-precedence0 = primary
+precedence0 = do e <- primary  -- Parse primary only once for efficiency
+                 (t e) <|> (completeCall e) <|> (completeIndex e) <|> (return e)
+  where t e = do _ <- char '\''
+                 xs <- codeAnnotations
+                 return $ Transpose e (UnaryAnn xs)
+
+{-|
+Complete function call. We assume that the call is already consumed and passed
+as an argument.
+-}
+completeCall :: Expr ASTAnnotation -> Parser (Expr ASTAnnotation)
+completeCall = callLike '(' ')' Call expression
+
+{-|
+Complete array/vector/matrix expression. We assume that the object to be indexed
+is already consumed and passed as an argument.
+-}
+completeIndex :: Expr ASTAnnotation -> Parser (Expr ASTAnnotation)
+completeIndex = callLike '[' ']' Index range
+
+{-| Type synonym for type of 'Range' and 'Index' constructors -}
+type CallLikeConstr = Expr ASTAnnotation
+                    -> [Expr ASTAnnotation]
+                    -> ASTAnnotation
+                    -> Expr ASTAnnotation
+
+{-|
+Complete "call-like" expressions, i.e. function applications and array indexing.
+Here, it is assumed that the identifier (callee or array to be indexed) has
+already been consumed and is passed as an argument (see below).
+-}
+callLike :: Char                           -- ^ Left delimiter, @(@ or @[@
+         -> Char                           -- ^ Right delimiter, @)@ or @]@
+         {-| Constructor for result, i.e., @Call@ or @Range@. -}
+         -> CallLikeConstr
+         {-| Parser for parsing a single argument or index -}
+         -> (Parser (Expr ASTAnnotation))
+         -> (Expr ASTAnnotation)           -- ^ Identifier (callee).
+         -> Parser (Expr ASTAnnotation)
+callLike ld rd f p e = do _ <- char ld
+                          (argAnns, args) <- (try withArgs) <|> withoutArgs
+                          _ <- char rd
+                          cs <- codeAnnotations
+                          return $ f e args (CallAnn argAnns cs)
+  where -- first case: if there is at least one argument
+        -- withArgs = do todo <- q `sepBy` (char ',')
+        withArgs = do xs <- ((,) <$> codeAnnotations <*> p) `sepBy` (char ',')
+                      -- if there are no arguments, 'as' should be [[]] not []
+                      -- for consistency.
+                      let (as, args) = if null xs then ([[]], []) else unzip xs
+                      return $ (as, args)
+        -- second case: if there are no arguments there can still be code
+        -- code annotations, e.g. @f( /* abc */ )@.
+        withoutArgs = do as <- codeAnnotations
+                         return $ ([as], [])
+
+{-|
+Range
+
+Range expression as used in array indexing or for loop ranges. Examples:
+@1:10@, @:3@, @1:@, or @:@.
+-}
+range :: Parser (Expr ASTAnnotation)
+range = do l <- optionMaybe $ try expression
+           colon <- optionMaybe $ char ':'
+           case (l, colon) of
+             (Just e,  Nothing) -> return e
+             (Nothing, Nothing) -> fail "Cannot parse range"
+             _ -> do cs <- codeAnnotations
+                     r <- optionMaybe $ try expression
+                     return $ Range l r (BinaryAnn cs)
 
 primary :: Parser (Expr ASTAnnotation)
 primary = literal <|> parentheses <|> identifier

@@ -89,6 +89,21 @@ data Expr a = Conditional           -- ^ Ternary @?:@ conditional
               (Expr a)              -- ^ base
               (Expr a)              -- ^ exponent
               a                     -- ^ annotation
+            | Transpose             -- ^ Matrix transposition
+              (Expr a)              -- ^ expression to be transposed
+              a                     -- ^ annotation
+            | Call                  -- ^ Function application
+              (Expr a)              -- ^ callee
+              [Expr a]              -- ^ arguments
+              a                     -- ^ annotation
+            | Index                 -- ^ Array indexing
+              (Expr a)              -- ^ expression to index
+              [Expr a]              -- ^ indices
+              a                     -- ^ annotation
+            | Range                 -- ^ Range, e.g. @1:9@, or @:3@
+              (Maybe (Expr a))      -- ^ lower limit
+              (Maybe (Expr a))      -- ^ upper limit
+              a                     -- ^ annotation
             | NumLiteral            -- ^ Numeric literal
               String                -- ^ Digits before comma
               (Maybe String)        -- ^ Decimal places after comma
