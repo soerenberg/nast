@@ -122,6 +122,8 @@ data Expr a = Conditional           -- ^ Ternary @?:@ conditional
             deriving (Eq, Show)
 
 
-data Stmt a = Break  -- ^ @break@ statement
-              a      -- ^ annotation
+data Stmt a = Break     -- ^ @break@ statement
+              a         -- ^ annotation
+            | Continue  -- @continue@ statement
+              a         -- ^ annotation
             deriving (Eq, Show)

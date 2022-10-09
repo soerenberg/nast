@@ -369,6 +369,13 @@ tests =
     , testCase "break/*A/*; /*B*/" $ parse statement "" "break/*A*/;/*B*/" @?=
       (Right $ Break $ KeywordAnn [Bracketed "A"] [Bracketed "B"])
     ]
+  , testGroup "continue"
+    [ testCase "continue;" $ parse statement "" "continue;" @?=
+      (Right $ Continue $ KeywordAnn [] [])
+    , testCase "continue/*A/*; /*B*/" $
+      parse statement "" "continue/*A*/;/*B*/" @?=
+      (Right $ Continue $ KeywordAnn [Bracketed "A"] [Bracketed "B"])
+    ]
   ]
 
 

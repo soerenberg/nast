@@ -38,7 +38,7 @@ module Text.Nast.Parser (
   , whitespace
   -- * statements
   , statement
-  , breakStmt
+  , keyword
   ) where
 
 
@@ -420,12 +420,17 @@ whitespace = many $ oneOf " \t"
 
 -- | Parse statements
 statement :: Parser (Stmt ASTAnnotation)
-statement = breakStmt
+statement =   (keyword "break" Break)
+          <|> (keyword "continue" Continue)
 
--- | @break@ statement
-breakStmt :: Parser (Stmt ASTAnnotation)
-breakStmt = do _ <- string "break"
-               xs <- codeAnnotations
-               _ <- char ';'
-               ys <- codeAnnotations
-               return $ Break $ KeywordAnn xs ys
+-- | Parse keyword statement such as @break@ or @continue@
+keyword :: String                                 -- ^ keyword name
+        -> (ASTAnnotation -> Stmt ASTAnnotation)  -- ^ constructor for Stmt
+        -> Parser (Stmt ASTAnnotation)
+keyword k constr = do _ <- string k
+                      xs <- codeAnnotations
+                      _ <- char ';'
+                      ys <- codeAnnotations
+                      return $ constr $ KeywordAnn xs ys
+
+
