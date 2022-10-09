@@ -64,7 +64,7 @@ import Text.ParserCombinators.Parsec
 import Control.Monad (void)
 import qualified Data.Map as Map
 
-import Text.Nast.Expr (Expr (..))
+import Text.Nast.AST (Expr (..))
 import Text.Nast.Annotation (ASTAnnotation (..), CodeAnnotation (..))
 
 

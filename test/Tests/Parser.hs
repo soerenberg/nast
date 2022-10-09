@@ -1,7 +1,7 @@
 module Tests.Parser (tests) where
 
 import Text.Nast.Annotation (ASTAnnotation (..), CodeAnnotation (..))
-import Text.Nast.Expr (Expr (..))
+import Text.Nast.AST (Expr (..))
 import Text.Nast.Parser
   ( expression
   , identifier

@@ -21,9 +21,6 @@ data ASTAnnotation = PrimaryAnn          -- ^ Primary expressions
                    | CallAnn             -- ^ Function application
                      [[CodeAnnotation]]  -- ^ succeeding the @(@ and commas
                      [CodeAnnotation]    -- ^ succeeding closing @)@
-                   | IndexAnn            -- ^ Function application
-                     [[CodeAnnotation]]  -- ^ succeeding the @(@ and commas
-                     [CodeAnnotation]    -- ^ succeeding closing @)@
                    deriving (Eq, Show)
 
 -- | Annotations of source code (comments, linebreaks)

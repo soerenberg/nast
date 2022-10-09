@@ -1,4 +1,4 @@
-module Text.Nast.Expr
+module Text.Nast.AST
  ( Expr (..)
  ) where
 
