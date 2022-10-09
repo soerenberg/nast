@@ -5,21 +5,22 @@ module Text.Nast.Annotation
 
 
 -- | Annotation for parsed AST
-data ASTAnnotation = PrimaryAnn        -- ^ Annotations of primary expressions
-                     [CodeAnnotation]  -- ^ Annotations after the primary
-                                       -- ^ expression
-                   | BinaryAnn         -- ^ Annotation of binary infix operations
-                     [CodeAnnotation]  -- ^ Annotations after the binary op token
-                   | UnaryAnn          -- ^ Annotations of unary expressions
-                     [CodeAnnotation]  -- ^ Annotations after (if prefix op) or
-                                       -- ^ before (if postfix op) the op token
-                   | ParensAnn         -- ^ Annotations for parenthesized
-                                       -- ^ expressions
-                     [CodeAnnotation]  -- ^ Annotations after opening @(@
-                     [CodeAnnotation]  -- ^ Annotations after closing @)@
-                   | CondAnn           -- ^ Annotation for ternary @?:@ op
-                     [CodeAnnotation]  -- ^ Annotations after @?@ token
-                     [CodeAnnotation]  -- ^ Annotations after the @:@ token
+data ASTAnnotation = PrimaryAnn          -- ^ Primary expressions
+                     [CodeAnnotation]    -- ^ succeeding the primary expression
+                   | BinaryAnn           -- ^ Binary infix operations
+                     [CodeAnnotation]    -- ^ succeeding the binary operator
+                   | UnaryAnn            -- ^ Unary expressions
+                     [CodeAnnotation]    -- ^ succeeding (if prefix) or
+                                         --   preceding (if postfix) operator
+                   | ParensAnn           -- ^ Parentheseses
+                     [CodeAnnotation]    -- ^ succeeding opening @(@
+                     [CodeAnnotation]    -- ^ succeeding closing @)@
+                   | CondAnn             -- ^ Ternary expressions
+                     [CodeAnnotation]    -- ^ succeeding the first op token
+                     [CodeAnnotation]    -- ^ succeeding the second op token
+                   | CallAnn             -- ^ Function application
+                     [[CodeAnnotation]]  -- ^ succeeding the @(@ and commas
+                     [CodeAnnotation]    -- ^ succeeding closing @)@
                    deriving (Eq, Show)
 
 -- | Annotations of source code (comments, linebreaks)
