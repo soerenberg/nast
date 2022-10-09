@@ -1,5 +1,6 @@
 module Text.Nast.AST
  ( Expr (..)
+ , Stmt (..)
  ) where
 
 
@@ -118,4 +119,9 @@ data Expr a = Conditional           -- ^ Ternary @?:@ conditional
             | Identifier            -- ^ Identifier
               String                -- ^ name
               a                     -- ^ annotation
+            deriving (Eq, Show)
+
+
+data Stmt a = Break  -- ^ @break@ statement
+              a      -- ^ annotation
             deriving (Eq, Show)

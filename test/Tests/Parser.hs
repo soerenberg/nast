@@ -1,7 +1,7 @@
 module Tests.Parser (tests) where
 
 import Text.Nast.Annotation (ASTAnnotation (..), CodeAnnotation (..))
-import Text.Nast.AST (Expr (..))
+import Text.Nast.AST (Expr (..), Stmt (..))
 import Text.Nast.Parser
   ( expression
   , identifier
@@ -9,6 +9,7 @@ import Text.Nast.Parser
   , codeAnnotations
   , range
   , whitespace
+  , statement
   )
 
 import Text.ParserCombinators.Parsec (parse)
@@ -361,6 +362,12 @@ tests =
     , testCase "'  '" $ parse whitespace "" "  " @?= Right "  "
     , testCase "'\\t  \\t'" $ parse whitespace "" "\t  \t" @?= Right "\t  \t"
     , testCase "no newline" $ parse whitespace "" " \n" @?= Right " "
+    ]
+  , testGroup "break"
+    [ testCase "break;" $ parse statement "" "break;" @?=
+      (Right $ Break $ KeywordAnn [] [])
+    , testCase "break/*A/*; /*B*/" $ parse statement "" "break/*A*/;/*B*/" @?=
+      (Right $ Break $ KeywordAnn [Bracketed "A"] [Bracketed "B"])
     ]
   ]
 

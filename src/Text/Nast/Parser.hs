@@ -36,6 +36,9 @@ module Text.Nast.Parser (
   , eol
   , newline
   , whitespace
+  -- * statements
+  , statement
+  , breakStmt
   ) where
 
 
@@ -64,7 +67,7 @@ import Text.ParserCombinators.Parsec
 import Control.Monad (void)
 import qualified Data.Map as Map
 
-import Text.Nast.AST (Expr (..))
+import Text.Nast.AST (Expr (..), Stmt (..))
 import Text.Nast.Annotation (ASTAnnotation (..), CodeAnnotation (..))
 
 
@@ -414,3 +417,15 @@ newline = char '\n' >> return Newline <?> "newline"
 -- | Zero or more space or tab characters
 whitespace :: Parser String
 whitespace = many $ oneOf " \t"
+
+-- | Parse statements
+statement :: Parser (Stmt ASTAnnotation)
+statement = breakStmt
+
+-- | @break@ statement
+breakStmt :: Parser (Stmt ASTAnnotation)
+breakStmt = do _ <- string "break"
+               xs <- codeAnnotations
+               _ <- char ';'
+               ys <- codeAnnotations
+               return $ Break $ KeywordAnn xs ys
