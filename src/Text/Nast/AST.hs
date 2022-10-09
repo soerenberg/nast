@@ -126,4 +126,6 @@ data Stmt a = Break     -- ^ @break@ statement
               a         -- ^ annotation
             | Continue  -- @continue@ statement
               a         -- ^ annotation
+            | Return    -- @return@ statement
+              a         -- ^ annotation
             deriving (Eq, Show)

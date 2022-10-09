@@ -422,6 +422,7 @@ whitespace = many $ oneOf " \t"
 statement :: Parser (Stmt ASTAnnotation)
 statement =   (keyword "break" Break)
           <|> (keyword "continue" Continue)
+          <|> (keyword "return" Return)
 
 -- | Parse keyword statement such as @break@ or @continue@
 keyword :: String                                 -- ^ keyword name
