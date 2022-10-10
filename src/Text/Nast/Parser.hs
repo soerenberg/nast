@@ -29,6 +29,7 @@ module Text.Nast.Parser (
   , binConstr
   -- * code annotations
   , codeAnnotations
+  , codeAnnotations1
   , comment
   , bracketed
   , lineBased
@@ -62,6 +63,7 @@ import Text.ParserCombinators.Parsec
   , optionMaybe
   , sepBy
   , sepEndBy
+  , sepEndBy1
   , string
   , try
   )
@@ -397,6 +399,12 @@ binConstr xs = (flip Map.lookup toBinOp) <$>
 codeAnnotations :: Parser [CodeAnnotation]
 codeAnnotations = whitespace >> (newline <|> comment) `sepEndBy` whitespace
 
+-- | One or more comments and newlines
+codeAnnotations1 :: Parser [CodeAnnotation]
+codeAnnotations1 = try annotations <|> justWhitespaces
+  where annotations = whitespace >> (newline <|> comment) `sepEndBy1` whitespace
+        justWhitespaces = whitespace1 >> return []
+
 -- | Stan comment
 comment :: Parser CodeAnnotation
 comment =   try lineBased
@@ -424,6 +432,10 @@ newline = char '\n' >> return Newline <?> "newline"
 -- | Zero or more space or tab characters
 whitespace :: Parser String
 whitespace = many $ oneOf " \t"
+
+-- | One or more space or tab characters
+whitespace1 :: Parser String
+whitespace1 = many1 $ oneOf " \t"
 
 -- | Parse statements
 statement :: Parser (Stmt ASTAnnotation)

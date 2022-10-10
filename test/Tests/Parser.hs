@@ -7,6 +7,7 @@ import Text.Nast.Parser
   , identifier
   , literal
   , codeAnnotations
+  , codeAnnotations1
   , range
   , whitespace
   , statement
@@ -353,6 +354,26 @@ tests =
         "/* a\nb*c*/\n//xy\n//pq" @?=
         (Right [Bracketed " a\nb*c", Newline, LineBased "xy", LineBased "pq"])
     , testCase "\\n" $ parse codeAnnotations "" "\n" @?= Right [Newline]
+    , testCase "' '" $ parse codeAnnotations "" " " @?= Right []
+    , testCase "''" $ parse codeAnnotations "" " " @?= Right []
+    ]
+  , testGroup "codeAnnotations1"
+    [ testCase "//" $ parse codeAnnotations1 "" "//" @?= (Right [LineBased ""])
+    , testCase "// abc" $ parse codeAnnotations1 "" "// abc" @?=
+        (Right [LineBased " abc"])
+    , testCase "/**/" $ parse codeAnnotations1 "" "/**/" @?=
+        (Right [Bracketed ""])
+    , testCase "/* abc */" $ parse codeAnnotations1 "" "/* abc */" @?=
+        (Right [Bracketed " abc "])
+    , testCase "/* ab*c*/" $ parse codeAnnotations1 "" "/* ab*c*/" @?=
+        (Right [Bracketed " ab*c"])
+    , testCase "/* a\\nb*c*/\\n//xy\\n//pq" $ parse codeAnnotations1 ""
+        "/* a\nb*c*/\n//xy\n//pq" @?=
+        (Right [Bracketed " a\nb*c", Newline, LineBased "xy", LineBased "pq"])
+    , testCase "\\n" $ parse codeAnnotations1 "" "\n" @?= Right [Newline]
+    , testCase "' '" $ parse codeAnnotations1 "" " " @?= Right []
+    , testCase "'' fails" $ assertBool ""
+        (isLeft $ parse codeAnnotations1 "" "")
     ]
   , testGroup "annotated"
     [ testCase "literal 1 comment" $ parse literal "" "1//abc" @?=
