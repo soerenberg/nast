@@ -27,6 +27,11 @@ data ASTAnnotation = PrimaryAnn          -- ^ Primary expressions
                    | BlockAnn            -- ^ Block statements (@{..}@)
                      [CodeAnnotation]    -- ^ succeeding opening @{@
                      [CodeAnnotation]    -- ^ succeeding closing @}@
+                   | IfAnn               -- ^ If / else statement
+                     [CodeAnnotation]    -- ^ succeeding @if@ keyword
+                   | IfElseAnn           -- ^ If / else statement
+                     [CodeAnnotation]    -- ^ succeeding @if@ keyword
+                     [CodeAnnotation]    -- ^ succeeding @else@ keyword
                    deriving (Eq, Show)
 
 -- | Annotations of source code (comments, linebreaks)

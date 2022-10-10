@@ -41,6 +41,7 @@ module Text.Nast.Parser (
   , statement
   , keyword
   , block
+  , ifElse
   ) where
 
 
@@ -443,6 +444,7 @@ statement =   (keyword "break" Break)
           <|> (keyword "continue" Continue)
           <|> (keyword "return" Return)
           <|> block
+          <|> ifElse
 
 -- | Parse keyword statement such as @break@ or @continue@
 keyword :: String                                 -- ^ keyword name
@@ -462,3 +464,15 @@ block = do _ <- char '{'
            _ <- char '}'
            ys <- codeAnnotations
            return $ Block stmts $ BlockAnn xs ys
+
+-- | Parse if then (else) statements
+ifElse :: Parser (Stmt ASTAnnotation)
+ifElse = do _ <- string "if"
+            xs <- codeAnnotations
+            cond <- parentheses
+            stmt <- statement
+            elseAnn <- optionMaybe $ try $ string "else" >> codeAnnotations
+            case elseAnn of
+              Nothing -> return $ If cond stmt $ IfAnn xs
+              Just ys -> do stmt' <- statement
+                            return $ IfElse cond stmt stmt' $ IfElseAnn xs ys

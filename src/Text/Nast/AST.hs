@@ -122,13 +122,22 @@ data Expr a = Conditional           -- ^ Ternary @?:@ conditional
             deriving (Eq, Show)
 
 
-data Stmt a = Break     -- ^ @break@ statement
-              a         -- ^ annotation
-            | Continue  -- @continue@ statement
-              a         -- ^ annotation
-            | Return    -- @return@ statement
-              a         -- ^ annotation
-            | Block     -- ^ Block statement (@{..}@)
-              [Stmt a]  -- ^ statements inside curly braces
-              a         -- ^ annotation
+data Stmt a = Break             -- ^ @break@ statement
+              a                 -- ^ annotation
+            | Continue          -- @continue@ statement
+              a                 -- ^ annotation
+            | Return            -- @return@ statement
+              a                 -- ^ annotation
+            | Block             -- ^ Block statement (@{..}@)
+              [Stmt a]          -- ^ statements inside curly braces
+              a                 -- ^ annotation
+            | If                -- ^ If / else statement
+              (Expr a)          -- ^ conditional expression
+              (Stmt a)          -- ^ "then" statement
+              a                 -- ^ annotation
+            | IfElse            -- ^ If / else statement
+              (Expr a)          -- ^ conditional expression
+              (Stmt a)          -- ^ "then" statement
+              (Stmt a)          -- ^ "else" statement
+              a                 -- ^ annotation
             deriving (Eq, Show)

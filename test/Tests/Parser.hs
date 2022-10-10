@@ -420,6 +420,21 @@ tests =
       (Right $ Block [Return (KeywordAnn [] [])]
                (BlockAnn [Bracketed "A"] [Bracketed "B"]))
     ]
+  , testGroup "if/else"
+    [ testCase "if (a) return;" $ parse statement "" "if (a) return;"
+      @?= (Right $ If (Parens id_a noPaA) (Return $ KeywordAnn [] [])
+                      (IfAnn []))
+    , testCase "if (a) return; else {}" $
+      parse statement "" "if (a) return; else {}"
+      @?= (Right $ IfElse (Parens id_a noPaA) (Return $ KeywordAnn [] [])
+                          (Block [] (BlockAnn [] []))
+                          (IfElseAnn [] []))
+    , testCase "if/*A*/(a) return; else/*B*/{}" $
+      parse statement "" "if/*A*/(a) return; else/*B*/{}"
+      @?= (Right $ IfElse (Parens id_a noPaA) (Return $ KeywordAnn [] [])
+                          (Block [] (BlockAnn [] []))
+                          (IfElseAnn [Bracketed "A"] [Bracketed "B"]))
+    ]
   ]
 
 
@@ -459,6 +474,9 @@ noBA = BinaryAnn []
 
 noPA :: ASTAnnotation   -- no primary annotation
 noPA = PrimaryAnn []
+
+noPaA :: ASTAnnotation   -- no parentheses annotation
+noPaA = ParensAnn [] []
 
 noUA :: ASTAnnotation   -- no unary annotation
 noUA = UnaryAnn []
