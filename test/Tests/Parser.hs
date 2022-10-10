@@ -174,6 +174,10 @@ tests =
   , testGroup "Precedence 3"
       [ testCase "3^x" $ parse expression "" "3^x" @?=
         (Right $ Pow lit_3 id_x noBA)
+      , testCase "x^p^q" $ parse expression "" "x^p^q" @?=
+        (Right $ Pow id_x (Pow id_p id_q noBA) noBA)
+      , testCase "x.^p.^q" $ parse expression "" "x.^p.^q" @?=
+        (Right $ EltPow id_x (EltPow id_p id_q noBA) noBA)
       , testCase "p .^ 1" $ parse expression "" "p .^ 1" @?=
         (Right $ EltPow id_p lit_1 noBA)
       , testCase "p.^ 1" $ parse expression "" "p.^ 1" @?=

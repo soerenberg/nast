@@ -216,7 +216,13 @@ Precedence level 1 expressions
 * @.^@ op, binary infix, right associative; element-wise exponentiation
 -}
 precedence1 :: Parser (Expr ASTAnnotation)
-precedence1 = chainl1 precedence0 $ binOp [".^", "^"]
+precedence1 = do e <- precedence0
+                 (try $ char '^' >> completeBin Pow e) <|>
+                   (try $ string ".^" >> completeBin EltPow e) <|>
+                   return e
+  where completeBin f e = do xs <- codeAnnotations
+                             r <- precedence1
+                             return $ f e r (BinaryAnn xs)
 
 {-|
 Precedence level 0 expressions
