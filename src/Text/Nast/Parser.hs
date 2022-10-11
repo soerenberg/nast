@@ -22,6 +22,7 @@ module Text.Nast.Parser (
   , CallLikeConstr
   , callLike
   , range
+  , lhs
   , primary
   , identifier
   , parentheses
@@ -307,6 +308,16 @@ range = do l <- optionMaybe $ try expression
              _ -> do cs <- codeAnnotations
                      r <- optionMaybe $ try expression
                      return $ Range l r (BinaryAnn cs)
+
+{-| Left-hand side expression
+
+Expressions that are allowed on the left-hand side of assignments are
+identifiers with zero or more array/matrix indices, such as @idfr@, @idfr[3]@,
+@idfr[3][5]@ and so on
+-}
+lhs :: Parser (Expr ASTAnnotation)
+lhs = do i <- identifier
+         (completeIndex i) <|> (return i)
 
 primary :: Parser (Expr ASTAnnotation)
 primary = literal <|> parentheses <|> identifier

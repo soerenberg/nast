@@ -11,6 +11,7 @@ import Text.Nast.Parser
   , range
   , whitespace
   , statement
+  , lhs
   )
 
 import Text.ParserCombinators.Parsec (parse)
@@ -217,6 +218,14 @@ tests =
       , testCase "! /*xy*/ p //uv" $ parse expression "" "! /*xy*/ p //uv" @?=
         (Right $ LogicalNeg (Identifier "p" (PrimaryAnn [LineBased "uv"]))
                             (UnaryAnn [Bracketed "xy"]))
+      ]
+  , testGroup "lhs"
+      [ testCase "xyz" $ parse lhs "" "xyz" @?= (Right $ Identifier "xyz" noPA)
+      , testCase "x[3]" $ parse lhs "" "x[3]" @?=
+          (Right $ Index id_x [lit_3] (CallAnn [[]] []))
+      , testCase "x[2,1]" $ parse lhs "" "x[3,1]" @?=
+          (Right $ Index id_x [lit_3, lit_1] (CallAnn [[], []] []))
+      , testCase "'-b' fails" $ assertBool "" (isLeft $ parse lhs "" "-b")
       ]
   , testGroup "literal"
       [ testCase "23" $ parse literal "" "23" @?=
