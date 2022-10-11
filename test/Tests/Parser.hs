@@ -345,7 +345,7 @@ tests =
         parse expression ""
         "x/*A*/[/*B*/a/*C*/:/*D*/b/*E*/]/*F*/[/*G*/p/*H*/:/*I*/q/*J*/]/*K*/" @?=
         (Right $ Index
-          (Index (Identifier "x" $ PrimaryAnn [Bracketed "A"]) 
+          (Index (Identifier "x" $ PrimaryAnn [Bracketed "A"])
                  [Range (Just $ Identifier "a" $ PrimaryAnn [Bracketed "C"])
                         (Just $ Identifier "b" $ PrimaryAnn [Bracketed "E"])
                         (BinaryAnn [Bracketed "D"])]
@@ -557,6 +557,16 @@ tests =
       (Right $ ForRange id_x id_a id_b (Return $ KeywordAnn [] [])
                    (ForRangeAnn [Bracketed "A"] [Bracketed "B"] [Bracketed "C"]
                                 [Bracketed "D"] [Bracketed "E"]))
+    ]
+  , testGroup "while loop"
+    [ testCase "while (a) return;" $ parse statement "" "while (a) return;" @?=
+      (Right $ While (Parens id_a $ ParensAnn [] [])
+                     (Return $ KeywordAnn [] []) $ WhileAnn [])
+    , testCase "while/*A*/(a) return;" $
+      parse statement "" "while/*A*/(a) return;"
+      @?= (Right $ While (Parens id_a $ ParensAnn [] [])
+                         (Return $ KeywordAnn [] [])
+                         (WhileAnn [Bracketed "A"]))
     ]
   , testGroup "special cases"
     [ testCase "returnn = a;" $ parse statement "" "returnn = a;" @?=

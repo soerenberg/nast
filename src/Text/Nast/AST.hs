@@ -183,4 +183,8 @@ data Stmt a = Break             -- ^ @break@ statement
               (Expr a)          -- ^ upper bound of range (rhs of @:@)
               (Stmt a)          -- ^ body
               a                 -- ^ annotation
+            | While             -- ^ while loop
+              (Expr a)          -- ^ condition
+              (Stmt a)          -- ^ body
+              a                 -- ^ annotation
             deriving (Eq, Show)

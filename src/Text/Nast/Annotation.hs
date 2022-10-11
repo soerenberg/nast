@@ -46,6 +46,8 @@ data ASTAnnotation = PrimaryAnn          -- ^ Primary expressions
                      [CodeAnnotation]    -- ^ succeeding @in@ keyword
                      [CodeAnnotation]    -- ^ succeeding @:@ symbol
                      [CodeAnnotation]    -- ^ succeeding closing @)@
+                   | WhileAnn            -- ^ while loop
+                     [CodeAnnotation]    -- ^ succeeding the @while@ keyword
                    deriving (Eq, Show)
 
 -- | Annotations of source code (comments, linebreaks)

@@ -459,6 +459,7 @@ statement =   (try $ keyword "break" Break)
           <|> block
           <|> try ifElse
           <|> try for
+          <|> try while
           <|> try assignment
           <?> "statement"
 
@@ -536,3 +537,10 @@ for = do xs <- string "for" >> codeAnnotations
            (Just (ws, r)) -> return $ ForRange i l r b $
                                       ForRangeAnn xs ys zs ws vs
            _ -> return $ For i l b (ForAnn xs ys zs vs)
+
+{-| Parse while-loop statement -}
+while :: Parser (Stmt ASTAnnotation)
+while = do xs <- string "while" >> codeAnnotations
+           cond <- parentheses
+           b <- statement
+           return $ While cond b $ WhileAnn xs
