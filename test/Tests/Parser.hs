@@ -538,6 +538,26 @@ tests =
                                (Identifier "b" $ PrimaryAnn [Bracketed "B"])
                                (AssignAnn [Newline] [Bracketed "C"]))
     ]
+  , testGroup "for loop"
+    [ testCase "for (x in a) return;" $
+      parse statement "" "for (x in a) return;" @?=
+      (Right $ For id_x id_a (Return $ KeywordAnn [] [])
+                   (ForAnn [] [] [] []))
+    , testCase "annotated For" $
+      parse statement "" "for/*A*/(/*B*/x in/*C*/ a)/*D*/ return;" @?=
+      (Right $ For id_x id_a (Return $ KeywordAnn [] [])
+                   (ForAnn [Bracketed "A"] [Bracketed "B"] [Bracketed "C"]
+                           [Bracketed "D"]))
+    , testCase "for (x in 1:3) return;" $
+      parse statement "" "for (x in 1:3) return;" @?=
+      (Right $ ForRange id_x lit_1 lit_3 (Return $ KeywordAnn [] [])
+                        (ForRangeAnn [] [] [] [] []))
+    , testCase "annotated ForRange" $
+      parse statement "" "for/*A*/(/*B*/x in/*C*/ a:/*D*/b)/*E*/ return;" @?=
+      (Right $ ForRange id_x id_a id_b (Return $ KeywordAnn [] [])
+                   (ForRangeAnn [Bracketed "A"] [Bracketed "B"] [Bracketed "C"]
+                                [Bracketed "D"] [Bracketed "E"]))
+    ]
   , testGroup "special cases"
     [ testCase "returnn = a;" $ parse statement "" "returnn = a;" @?=
       (Right $ Assign (Identifier "returnn" noPA) id_a $ AssignAnn [] [])

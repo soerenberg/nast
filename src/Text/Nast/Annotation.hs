@@ -35,6 +35,17 @@ data ASTAnnotation = PrimaryAnn          -- ^ Primary expressions
                    | AssignAnn           -- ^ assignment statement
                      [CodeAnnotation]    -- ^ succeeding the assignment op token
                      [CodeAnnotation]    -- ^ succeeding the closing @;@
+                   | ForAnn              -- ^ for loop without range
+                     [CodeAnnotation]    -- ^ succeeding @for@ keyword
+                     [CodeAnnotation]    -- ^ succeeding opening @(@
+                     [CodeAnnotation]    -- ^ succeeding @in@ keyword
+                     [CodeAnnotation]    -- ^ succeeding closing @)@
+                   | ForRangeAnn         -- ^ for loop without range
+                     [CodeAnnotation]    -- ^ succeeding @for@ keyword
+                     [CodeAnnotation]    -- ^ succeeding opening @(@
+                     [CodeAnnotation]    -- ^ succeeding @in@ keyword
+                     [CodeAnnotation]    -- ^ succeeding @:@ symbol
+                     [CodeAnnotation]    -- ^ succeeding closing @)@
                    deriving (Eq, Show)
 
 -- | Annotations of source code (comments, linebreaks)

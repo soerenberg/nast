@@ -43,6 +43,7 @@ module Text.Nast.Parser (
   , keyword
   , block
   , ifElse
+  , for
   ) where
 
 
@@ -457,6 +458,7 @@ statement =   (try $ keyword "break" Break)
           <|> (try $ keyword "return" Return)
           <|> block
           <|> try ifElse
+          <|> try for
           <|> try assignment
           <?> "statement"
 
@@ -518,3 +520,19 @@ assignOp = foldr1 (<|>) [p s f | (s, f) <- tokenConsts]
                       , (".*=", EltTimesAssign)
                       , ("./=", EltDivideAssign)
                       ]
+
+{-| Parse for-loop statement -}
+for :: Parser (Stmt ASTAnnotation)
+for = do xs <- string "for" >> codeAnnotations
+         ys <- char '(' >> codeAnnotations
+         i <- identifier
+         zs <- string "in" >> codeAnnotations
+         l <- expression
+         opt_r <- optionMaybe $ try $
+                    char ':' >> (,) <$> codeAnnotations <*> expression
+         vs <- char ')' >> codeAnnotations
+         b <- statement
+         case opt_r of
+           (Just (ws, r)) -> return $ ForRange i l r b $
+                                      ForRangeAnn xs ys zs ws vs
+           _ -> return $ For i l b (ForAnn xs ys zs vs)

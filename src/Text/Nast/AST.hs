@@ -172,4 +172,15 @@ data Stmt a = Break             -- ^ @break@ statement
               (Expr a)          -- ^ left-hand side
               (Expr a)          -- ^ right-hand side
               a                 -- ^ annotation
+            | For               -- ^ for loop without range (@for (.. in ..)@)
+              (Expr a)          -- ^ variable, identifier (lhs of @in@)
+              (Expr a)          -- ^ expression to iterate over (rhs of @in@)
+              (Stmt a)          -- ^ body
+              a                 -- ^ annotation
+            | ForRange          -- ^ for loop with range (@for (.. in ..:..)@)
+              (Expr a)          -- ^ variable, identifier
+              (Expr a)          -- ^ lower bound of range (lhs of @:@)
+              (Expr a)          -- ^ upper bound of range (rhs of @:@)
+              (Stmt a)          -- ^ body
+              a                 -- ^ annotation
             deriving (Eq, Show)
