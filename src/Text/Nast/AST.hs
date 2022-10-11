@@ -140,4 +140,36 @@ data Stmt a = Break             -- ^ @break@ statement
               (Stmt a)          -- ^ "then" statement
               (Stmt a)          -- ^ "else" statement
               a                 -- ^ annotation
+            | Assign            -- ^ assignment (@=@)
+              (Expr a)          -- ^ left-hand side
+              (Expr a)          -- ^ right-hand side
+              a                 -- ^ annotation
+            | ArrowAssign       -- ^ assignment (@<-@)
+              (Expr a)          -- ^ left-hand side
+              (Expr a)          -- ^ right-hand side
+              a                 -- ^ annotation
+            | PlusAssign        -- ^ plus-assignment (@+=@)
+              (Expr a)          -- ^ left-hand side
+              (Expr a)          -- ^ right-hand side
+              a                 -- ^ annotation
+            | MinusAssign       -- ^ minus-assignment (@-=@)
+              (Expr a)          -- ^ left-hand side
+              (Expr a)          -- ^ right-hand side
+              a                 -- ^ annotation
+            | TimesAssign       -- ^ times-assignment (@*=@)
+              (Expr a)          -- ^ left-hand side
+              (Expr a)          -- ^ right-hand side
+              a                 -- ^ annotation
+            | DivideAssign      -- ^ divide-assignment (@/=@)
+              (Expr a)          -- ^ left-hand side
+              (Expr a)          -- ^ right-hand side
+              a                 -- ^ annotation
+            | EltTimesAssign    -- ^ element-wise times-assignment (@.*=@)
+              (Expr a)          -- ^ left-hand side
+              (Expr a)          -- ^ right-hand side
+              a                 -- ^ annotation
+            | EltDivideAssign   -- ^ element-wise divide-assignment (@./=@)
+              (Expr a)          -- ^ left-hand side
+              (Expr a)          -- ^ right-hand side
+              a                 -- ^ annotation
             deriving (Eq, Show)

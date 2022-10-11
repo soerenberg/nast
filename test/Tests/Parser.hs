@@ -464,6 +464,80 @@ tests =
                           (Block [] (BlockAnn [] []))
                           (IfElseAnn [Bracketed "A"] [Bracketed "B"]))
     ]
+  , testGroup "assignments"
+    [ testCase "a=b;" $ parse statement "" "a=b;" @?=
+      (Right $ Assign id_a id_b $ AssignAnn [] [])
+    , testCase "a = b ;" $ parse statement "" "a = b ;" @?=
+      (Right $ Assign id_a id_b $ AssignAnn [] [])
+    , testCase "annotated assign" $
+      parse statement "" "a /*A*/ =\nb/*B*/ ; /*C*/" @?=
+      (Right $ Assign (Identifier "a" $ PrimaryAnn [Bracketed "A"])
+                      (Identifier "b" $ PrimaryAnn [Bracketed "B"])
+                      (AssignAnn [Newline] [Bracketed "C"]))
+    , testCase "a<-b;" $ parse statement "" "a<-b;" @?=
+      (Right $ ArrowAssign id_a id_b $ AssignAnn [] [])
+    , testCase "a <- b ;" $ parse statement "" "a <- b ;" @?=
+      (Right $ ArrowAssign id_a id_b $ AssignAnn [] [])
+    , testCase "annotated assign" $
+      parse statement "" "a /*A*/ <-\nb/*B*/ ; /*C*/" @?=
+      (Right $ ArrowAssign (Identifier "a" $ PrimaryAnn [Bracketed "A"])
+                           (Identifier "b" $ PrimaryAnn [Bracketed "B"])
+                           (AssignAnn [Newline] [Bracketed "C"]))
+    , testCase "a+=b;" $ parse statement "" "a+=b;" @?=
+      (Right $ PlusAssign id_a id_b $ AssignAnn [] [])
+    , testCase "a += b ;" $ parse statement "" "a += b ;" @?=
+      (Right $ PlusAssign id_a id_b $ AssignAnn [] [])
+    , testCase "annotated assign" $
+      parse statement "" "a /*A*/ +=\nb/*B*/ ; /*C*/" @?=
+      (Right $ PlusAssign (Identifier "a" $ PrimaryAnn [Bracketed "A"])
+                          (Identifier "b" $ PrimaryAnn [Bracketed "B"])
+                          (AssignAnn [Newline] [Bracketed "C"]))
+    , testCase "a-=b;" $ parse statement "" "a-=b;" @?=
+      (Right $ MinusAssign id_a id_b $ AssignAnn [] [])
+    , testCase "a -= b ;" $ parse statement "" "a -= b ;" @?=
+      (Right $ MinusAssign id_a id_b $ AssignAnn [] [])
+    , testCase "annotated assign" $
+      parse statement "" "a /*A*/ -=\nb/*B*/ ; /*C*/" @?=
+      (Right $ MinusAssign (Identifier "a" $ PrimaryAnn [Bracketed "A"])
+                           (Identifier "b" $ PrimaryAnn [Bracketed "B"])
+                           (AssignAnn [Newline] [Bracketed "C"]))
+    , testCase "a*=b;" $ parse statement "" "a*=b;" @?=
+      (Right $ TimesAssign id_a id_b $ AssignAnn [] [])
+    , testCase "a *= b ;" $ parse statement "" "a *= b ;" @?=
+      (Right $ TimesAssign id_a id_b $ AssignAnn [] [])
+    , testCase "annotated assign" $
+      parse statement "" "a /*A*/ *=\nb/*B*/ ; /*C*/" @?=
+      (Right $ TimesAssign (Identifier "a" $ PrimaryAnn [Bracketed "A"])
+                           (Identifier "b" $ PrimaryAnn [Bracketed "B"])
+                           (AssignAnn [Newline] [Bracketed "C"]))
+    , testCase "a/=b;" $ parse statement "" "a/=b;" @?=
+      (Right $ DivideAssign id_a id_b $ AssignAnn [] [])
+    , testCase "a /= b ;" $ parse statement "" "a /= b ;" @?=
+      (Right $ DivideAssign id_a id_b $ AssignAnn [] [])
+    , testCase "annotated assign" $
+      parse statement "" "a /*A*/ /=\nb/*B*/ ; /*C*/" @?=
+      (Right $ DivideAssign (Identifier "a" $ PrimaryAnn [Bracketed "A"])
+                            (Identifier "b" $ PrimaryAnn [Bracketed "B"])
+                            (AssignAnn [Newline] [Bracketed "C"]))
+    , testCase "a.*=b;" $ parse statement "" "a.*=b;" @?=
+      (Right $ EltTimesAssign id_a id_b $ AssignAnn [] [])
+    , testCase "a .*= b ;" $ parse statement "" "a .*= b ;" @?=
+      (Right $ EltTimesAssign id_a id_b $ AssignAnn [] [])
+    , testCase "annotated assign" $
+      parse statement "" "a /*A*/ .*=\nb/*B*/ ; /*C*/" @?=
+      (Right $ EltTimesAssign (Identifier "a" $ PrimaryAnn [Bracketed "A"])
+                           (Identifier "b" $ PrimaryAnn [Bracketed "B"])
+                           (AssignAnn [Newline] [Bracketed "C"]))
+    , testCase "a./=b;" $ parse statement "" "a./=b;" @?=
+      (Right $ EltDivideAssign id_a id_b $ AssignAnn [] [])
+    , testCase "a ./= b ;" $ parse statement "" "a ./= b ;" @?=
+      (Right $ EltDivideAssign id_a id_b $ AssignAnn [] [])
+    , testCase "annotated assign" $
+      parse statement "" "a /*A*/ ./=\nb/*B*/ ; /*C*/" @?=
+      (Right $ EltDivideAssign (Identifier "a" $ PrimaryAnn [Bracketed "A"])
+                               (Identifier "b" $ PrimaryAnn [Bracketed "B"])
+                               (AssignAnn [Newline] [Bracketed "C"]))
+    ]
   ]
 
 

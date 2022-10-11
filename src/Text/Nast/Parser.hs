@@ -457,6 +457,8 @@ statement =   (keyword "break" Break)
           <|> (keyword "return" Return)
           <|> block
           <|> ifElse
+          <|> assignment
+          <?> "statement"
 
 -- | Parse keyword statement such as @break@ or @continue@
 keyword :: String                                 -- ^ keyword name
@@ -488,3 +490,31 @@ ifElse = do _ <- string "if"
               Nothing -> return $ If cond stmt $ IfAnn xs
               Just ys -> do stmt' <- statement
                             return $ IfElse cond stmt stmt' $ IfElseAnn xs ys
+
+-- | Parse assignment statement ops such as @=@, @<-@, @+=@, @*=@
+assignment :: Parser (Stmt ASTAnnotation)
+assignment = do l <- lhs
+                (xs, op) <- assignOp
+                r <- expression
+                ys <- char ';' >> codeAnnotations
+                return $ op l r $ AssignAnn xs ys
+
+{-| Type synonym for construrtors assignment (Assign, PlusAssign, ...) nodes -}
+type AssignConstr = Expr ASTAnnotation   -- ^ left-hand side
+                  -> Expr ASTAnnotation  -- ^ right-hand side
+                  -> ASTAnnotation       -- ^ annotations after op token
+                  -> Stmt ASTAnnotation
+
+{-| Parse assignment operator and return annotations & respective constructor -}
+assignOp :: Parser ([CodeAnnotation], AssignConstr)
+assignOp = foldr1 (<|>) [p s f | (s, f) <- tokenConsts]
+  where p t g = try $ (,) <$> ((string t) >> codeAnnotations) <*> return g
+        tokenConsts = [ ("=", Assign)
+                      , ("<-", ArrowAssign)
+                      , ("+=", PlusAssign)
+                      , ("-=", MinusAssign)
+                      , ("*=", TimesAssign)
+                      , ("/=", DivideAssign)
+                      , (".*=", EltTimesAssign)
+                      , ("./=", EltDivideAssign)
+                      ]
