@@ -253,7 +253,8 @@ Complete array/vector/matrix expression. We assume that the object to be indexed
 is already consumed and passed as an argument.
 -}
 completeIndex :: Expr ASTAnnotation -> Parser (Expr ASTAnnotation)
-completeIndex = callLike '[' ']' Index range
+completeIndex e = do e' <- callLike '[' ']' Index range e
+                     (completeIndex e' <|> return e')
 
 {-| Type synonym for type of 'Range' and 'Index' constructors -}
 type CallLikeConstr = Expr ASTAnnotation

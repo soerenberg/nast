@@ -325,6 +325,26 @@ tests =
             [ Range (Just $ id_a) (Just $ id_b) (BinaryAnn [])
             , Range (Just $ id_p) (Just $ id_q) (BinaryAnn [])
             ] (CallAnn [[], []] []))
+    , testCase "x[a:b][p:q]" $
+        parse expression "" "x[a:b][p:q]" @?=
+        (Right $ Index
+          (Index id_x [Range (Just $ id_a) (Just $ id_b) (BinaryAnn [])]
+            (CallAnn [[]] []))
+          [Range (Just $ id_p) (Just $ id_q) (BinaryAnn [])]
+          (CallAnn [[]] []))
+    , testCase "annotated x[a:b][p:q]" $
+        parse expression ""
+        "x/*A*/[/*B*/a/*C*/:/*D*/b/*E*/]/*F*/[/*G*/p/*H*/:/*I*/q/*J*/]/*K*/" @?=
+        (Right $ Index
+          (Index (Identifier "x" $ PrimaryAnn [Bracketed "A"]) 
+                 [Range (Just $ Identifier "a" $ PrimaryAnn [Bracketed "C"])
+                        (Just $ Identifier "b" $ PrimaryAnn [Bracketed "E"])
+                        (BinaryAnn [Bracketed "D"])]
+            (CallAnn [[Bracketed "B"]] [Bracketed "F"]))
+          [Range (Just $ Identifier "p" $ PrimaryAnn [Bracketed "H"])
+                 (Just $ Identifier "q" $ PrimaryAnn [Bracketed "J"])
+                 (BinaryAnn [Bracketed "I"])]
+          (CallAnn [[Bracketed "G"]] [Bracketed "K"]))
     ]
   , testGroup "range"
     [ testCase "range a" $ parse range "" "a" @?= (Right $ id_a)
