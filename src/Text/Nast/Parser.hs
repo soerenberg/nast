@@ -452,12 +452,12 @@ whitespace1 = many1 $ oneOf " \t"
 
 -- | Parse statements
 statement :: Parser (Stmt ASTAnnotation)
-statement =   (keyword "break" Break)
-          <|> (keyword "continue" Continue)
-          <|> (keyword "return" Return)
+statement =   (try $ keyword "break" Break)
+          <|> (try $ keyword "continue" Continue)
+          <|> (try $ keyword "return" Return)
           <|> block
-          <|> ifElse
-          <|> assignment
+          <|> try ifElse
+          <|> try assignment
           <?> "statement"
 
 -- | Parse keyword statement such as @break@ or @continue@

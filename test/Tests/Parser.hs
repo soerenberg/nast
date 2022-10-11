@@ -538,6 +538,18 @@ tests =
                                (Identifier "b" $ PrimaryAnn [Bracketed "B"])
                                (AssignAnn [Newline] [Bracketed "C"]))
     ]
+  , testGroup "special cases"
+    [ testCase "returnn = a;" $ parse statement "" "returnn = a;" @?=
+      (Right $ Assign (Identifier "returnn" noPA) id_a $ AssignAnn [] [])
+    , testCase "break_ = a;" $ parse statement "" "break_ = a;" @?=
+      (Right $ Assign (Identifier "break_" noPA) id_a $ AssignAnn [] [])
+    , testCase "continue_ = a;" $ parse statement "" "continue_ = a;" @?=
+      (Right $ Assign (Identifier "continue_" noPA) id_a $ AssignAnn [] [])
+    , testCase "if_ = a;" $ parse statement "" "if_ = a;" @?=
+      (Right $ Assign (Identifier "if_" noPA) id_a $ AssignAnn [] [])
+    , testCase "else_ = a;" $ parse statement "" "else_ = a;" @?=
+      (Right $ Assign (Identifier "else_" noPA) id_a $ AssignAnn [] [])
+    ]
   ]
 
 
