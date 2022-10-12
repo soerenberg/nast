@@ -605,6 +605,18 @@ tests =
     , testCase "print(); fails" $ assertBool ""
       (isLeft $ parse statement "" "print();")
     ]
+  , testGroup "reject"
+    [ testCase "reject(a,1);" $ parse statement "" "reject(a,1);" @?=
+      (Right $ Reject (Printables [id_a, lit_1] $ PrintablesAnn [[], []])
+                      (RejectAnn [] [] []))
+    , testCase "reject/*A*/(a,1)/*B*/;/*C*/" $
+      parse statement "" "reject/*A*/(a,1)/*B*/;/*C*/" @?=
+      (Right $ Reject (Printables [id_a, lit_1] $ PrintablesAnn [[], []])
+                      (RejectAnn [Bracketed "A"] [Bracketed "B"]
+                                 [Bracketed "C"]))
+    , testCase "reject(); fails" $ assertBool ""
+      (isLeft $ parse statement "" "reject();")
+    ]
   , testGroup "special cases"
     [ testCase "returnn = a;" $ parse statement "" "returnn = a;" @?=
       (Right $ Assign (Identifier "returnn" noPA) id_a $ AssignAnn [] [])

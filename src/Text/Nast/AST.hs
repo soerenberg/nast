@@ -197,4 +197,7 @@ data Stmt a = Break             -- ^ @break@ statement
             | Print             -- ^ print statement
               (Expr a)          -- ^ printables
               a                 -- ^ annotation
+            | Reject            -- ^ print statement
+              (Expr a)          -- ^ printables
+              a                 -- ^ annotation
             deriving (Eq, Show)

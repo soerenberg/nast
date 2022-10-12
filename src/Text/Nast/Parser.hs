@@ -47,6 +47,7 @@ module Text.Nast.Parser (
   , while
   , tilde
   , printStmt
+  , reject
   ) where
 
 
@@ -468,6 +469,7 @@ statement =   (try $ keyword "break" Break)
           <|> (try $ keyword "continue" Continue)
           <|> (try $ keyword "return" Return)
           <|> try printStmt
+          <|> try reject
           <|> block
           <|> try ifElse
           <|> try for
@@ -574,3 +576,11 @@ printStmt = do xs <- string "print" >> codeAnnotations <* char '('
                ys <- char ')' >> codeAnnotations
                zs <- char ';' >> codeAnnotations
                return $ Print ps $ PrintAnn xs ys zs
+
+{-| Reject statement -}
+reject :: Parser (Stmt ASTAnnotation)
+reject = do xs <- string "reject" >> codeAnnotations <* char '('
+            ps <- printables
+            ys <- char ')' >> codeAnnotations
+            zs <- char ';' >> codeAnnotations
+            return $ Reject ps $ RejectAnn xs ys zs

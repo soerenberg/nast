@@ -57,6 +57,10 @@ data ASTAnnotation = PrimaryAnn          -- ^ Primary expressions
                      [CodeAnnotation]    -- ^ succeeding the @print@ keyword
                      [CodeAnnotation]    -- ^ succeeding the closing @)@
                      [CodeAnnotation]    -- ^ succeeding the @;@
+                   | RejectAnn           -- ^ print statement
+                     [CodeAnnotation]    -- ^ succeeding the @print@ keyword
+                     [CodeAnnotation]    -- ^ succeeding the closing @)@
+                     [CodeAnnotation]    -- ^ succeeding the @;@
                    deriving (Eq, Show)
 
 -- | Annotations of source code (comments, linebreaks)
