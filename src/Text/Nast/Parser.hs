@@ -44,6 +44,8 @@ module Text.Nast.Parser (
   , block
   , ifElse
   , for
+  , while
+  , tilde
   ) where
 
 
@@ -461,6 +463,7 @@ statement =   (try $ keyword "break" Break)
           <|> try for
           <|> try while
           <|> try assignment
+          <|> try tilde
           <?> "statement"
 
 -- | Parse keyword statement such as @break@ or @continue@
@@ -544,3 +547,12 @@ while = do xs <- string "while" >> codeAnnotations
            cond <- parentheses
            b <- statement
            return $ While cond b $ WhileAnn xs
+
+{-| Tilde statement -}
+tilde :: Parser (Stmt ASTAnnotation)
+tilde = do l <- expression
+           xs <- char '~' >> codeAnnotations
+           i <- identifier
+           r <- completeCall i
+           ys <- char ';' >> codeAnnotations
+           return $ Tilde l r $ TildeAnn xs ys

@@ -568,6 +568,16 @@ tests =
                          (Return $ KeywordAnn [] [])
                          (WhileAnn [Bracketed "A"]))
     ]
+  , testGroup "tilde stmt"
+    [ testCase "a+1 ~ x(p,q);" $ parse statement "" "a+1 ~ x(p, q);" @?=
+      (Right $ Tilde (Add id_a lit_1 $ BinaryAnn [])
+                     (Call id_x [id_p, id_q] $ CallAnn [[], []] [])
+                     (TildeAnn [] []))
+    , testCase "a ~/*A*/x();/*B*/" $ parse statement "" "a ~/*A*/x();/*B*/" @?=
+      (Right $ Tilde id_a
+                     (Call id_x [] $ CallAnn [[]] [])
+                     (TildeAnn [Bracketed "A"] [Bracketed "B"]))
+    ]
   , testGroup "special cases"
     [ testCase "returnn = a;" $ parse statement "" "returnn = a;" @?=
       (Right $ Assign (Identifier "returnn" noPA) id_a $ AssignAnn [] [])

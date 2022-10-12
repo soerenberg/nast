@@ -187,4 +187,8 @@ data Stmt a = Break             -- ^ @break@ statement
               (Expr a)          -- ^ condition
               (Stmt a)          -- ^ body
               a                 -- ^ annotation
+            | Tilde             -- ^ tilde expression
+              (Expr a)          -- ^ left-hand side
+              (Expr a)          -- ^ right-hand side
+              a                 -- ^ annotation
             deriving (Eq, Show)

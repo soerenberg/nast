@@ -48,6 +48,9 @@ data ASTAnnotation = PrimaryAnn          -- ^ Primary expressions
                      [CodeAnnotation]    -- ^ succeeding closing @)@
                    | WhileAnn            -- ^ while loop
                      [CodeAnnotation]    -- ^ succeeding the @while@ keyword
+                   | TildeAnn            -- ^ tilde statement
+                     [CodeAnnotation]    -- ^ succeeding the @~@ symbol
+                     [CodeAnnotation]    -- ^ succeeding the closing @;@
                    deriving (Eq, Show)
 
 -- | Annotations of source code (comments, linebreaks)
