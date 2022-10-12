@@ -29,7 +29,7 @@ data ASTAnnotation = PrimaryAnn          -- ^ Primary expressions
                    | BlockAnn            -- ^ Block statements (@{..}@)
                      [CodeAnnotation]    -- ^ succeeding opening @{@
                      [CodeAnnotation]    -- ^ succeeding closing @}@
-                   | IfAnn               -- ^ If / else statement
+                   | IfAnn               -- ^ If statement (without else clause)
                      [CodeAnnotation]    -- ^ succeeding @if@ keyword
                    | IfElseAnn           -- ^ If / else statement
                      [CodeAnnotation]    -- ^ succeeding @if@ keyword

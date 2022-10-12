@@ -88,12 +88,14 @@ numLiteral = do i <- signedInt
                 xs <- codeAnnotations
                 return $ NumLiteral i d e (PrimaryAnn xs)
 
+-- | Signed integer number, e.g., @+3@, @-8@, @2@
 signedInt :: Parser String
 signedInt = do plus <|> minus <|> nosign
     where nosign = many1 digit
           plus = (:) <$> char '+' <*> nosign
           minus = (:) <$> char '-' <*> nosign
 
+-- | String literal, e.g. @"abc"@
 stringLiteral :: Parser (Expr ASTAnnotation)
 stringLiteral = do _ <- char '"'
                    s <- many $ noneOf "\n\""
@@ -101,10 +103,11 @@ stringLiteral = do _ <- char '"'
                    xs <- codeAnnotations
                    return $ StringLiteral s (PrimaryAnn xs)
 
+-- | Stan expression
 expression :: Parser (Expr ASTAnnotation)
 expression = precedence10
 
-{-| List of printables. Used in @print@ and @reject@ statements. -}
+-- | List of printables. Used in @print@ and @reject@ statements.
 printables :: Parser (Expr ASTAnnotation)
 printables = do xs <- p `sepBy1` char ','
                 let (as, es) = unzip xs

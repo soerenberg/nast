@@ -134,7 +134,7 @@ data Stmt a = Break             -- ^ @break@ statement
             | Block             -- ^ Block statement (@{..}@)
               [Stmt a]          -- ^ statements inside curly braces
               a                 -- ^ annotation
-            | If                -- ^ If / else statement
+            | If                -- ^ If statement (without else clause)
               (Expr a)          -- ^ conditional expression
               (Stmt a)          -- ^ "then" statement
               a                 -- ^ annotation
