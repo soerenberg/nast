@@ -1,7 +1,6 @@
 module Text.Nast.Parser (
   -- * literals
-    literal
-  , numLiteral
+    numLiteral
   , signedInt
   , stringLiteral
   -- * expressions
@@ -79,10 +78,7 @@ import Text.Nast.AST (Expr (..), Stmt (..))
 import Text.Nast.Annotation (ASTAnnotation (..), CodeAnnotation (..))
 
 
--- | Stan literal
-literal :: Parser (Expr ASTAnnotation)
-literal = numLiteral <|> stringLiteral
-
+-- | Stan numeric literal
 numLiteral :: Parser (Expr ASTAnnotation)
 numLiteral = do i <- signedInt
                 d <- optionMaybe (char '.' >> many1 digit)
@@ -323,7 +319,7 @@ lhs = do i <- identifier
          (completeIndex i) <|> (return i)
 
 primary :: Parser (Expr ASTAnnotation)
-primary = literal <|> parentheses <|> identifier
+primary = numLiteral <|> parentheses <|> identifier
 
 {-|
 Identifier

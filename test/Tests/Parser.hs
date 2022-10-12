@@ -5,7 +5,8 @@ import Text.Nast.AST (Expr (..), Stmt (..))
 import Text.Nast.Parser
   ( expression
   , identifier
-  , literal
+  , numLiteral
+  , stringLiteral
   , codeAnnotations
   , codeAnnotations1
   , range
@@ -227,31 +228,33 @@ tests =
           (Right $ Index id_x [lit_3, lit_1] (CallAnn [[], []] []))
       , testCase "'-b' fails" $ assertBool "" (isLeft $ parse lhs "" "-b")
       ]
-  , testGroup "literal"
-      [ testCase "23" $ parse literal "" "23" @?=
+  , testGroup "numeric literal"
+      [ testCase "23" $ parse numLiteral "" "23" @?=
         (Right $ NumLiteral "23" Nothing Nothing noPA)
-      , testCase "-7" $ parse literal "" "-7" @?=
+      , testCase "-7" $ parse numLiteral "" "-7" @?=
         (Right $ NumLiteral "-7" Nothing Nothing noPA)
-      , testCase "0" $ parse literal "" "0" @?=
+      , testCase "0" $ parse numLiteral "" "0" @?=
         (Right $ NumLiteral "0" Nothing Nothing noPA)
-      , testCase "12.23" $ parse literal "" "12.23" @?=
+      , testCase "12.23" $ parse numLiteral "" "12.23" @?=
         (Right $ NumLiteral "12" (Just "23") Nothing noPA)
-      , testCase "03.14" $ parse literal "" "03.14" @?=
+      , testCase "03.14" $ parse numLiteral "" "03.14" @?=
         (Right $ NumLiteral "03" (Just "14") Nothing noPA)
-      , testCase "-13.1e07" $ parse literal "" "-13.1e07" @?=
+      , testCase "-13.1e07" $ parse numLiteral "" "-13.1e07" @?=
         (Right $ NumLiteral "-13" (Just "1") (Just "07") noPA)
-      , testCase "3e6" $ parse literal "" "3e6" @?=
+      , testCase "3e6" $ parse numLiteral "" "3e6" @?=
         (Right $ NumLiteral "3" Nothing (Just "6") noPA)
-      , testCase "-98e-012" $ parse literal "" "-98e-012" @?=
+      , testCase "-98e-012" $ parse numLiteral "" "-98e-012" @?=
         (Right $ NumLiteral "-98" Nothing (Just "-012") noPA)
-      , testCase "003.001e006" $ parse literal "" "003.001e006" @?=
+      , testCase "003.001e006" $ parse numLiteral "" "003.001e006" @?=
         (Right $ NumLiteral "003" (Just "001") (Just "006") noPA)
-      , testCase "'' (empty string)" $ parse literal "" "\"\"" @?=
+      ]
+  , testGroup "string literals"
+      [ testCase "'' (empty string)" $ parse stringLiteral "" "\"\"" @?=
         (Right $ StringLiteral "" noPA)
-      , testCase "'abc'" $ parse literal "" "\"abc\"" @?=
+      , testCase "'abc'" $ parse stringLiteral "" "\"abc\"" @?=
         (Right $ StringLiteral "abc" noPA)
       , testCase "'a\\na' fails" $
-        assertBool "" (isLeft $ parse literal "" "\"a\na\"")
+        assertBool "" (isLeft $ parse stringLiteral "" "\"a\na\"")
       ]
   , testGroup "parentheses"
     [ testCase "(3)" $ parse expression "" "(3)" @?=
@@ -405,9 +408,10 @@ tests =
         (isLeft $ parse codeAnnotations1 "" "")
     ]
   , testGroup "annotated"
-    [ testCase "literal 1 comment" $ parse literal "" "1//abc" @?=
+    [ testCase "numLiteral 1 comment" $ parse numLiteral "" "1//abc" @?=
       (Right $ (NumLiteral "1" Nothing Nothing (PrimaryAnn [LineBased "abc"])))
-    , testCase "literal 2 comments" $ parse literal "" "1 /* ab */ // xyz" @?=
+    , testCase "numLiteral 2 comments" $
+      parse numLiteral "" "1 /* ab */ // xyz" @?=
       (Right $ (NumLiteral "1" Nothing Nothing
                            (PrimaryAnn [Bracketed " ab ", LineBased " xyz"])))
     ]
