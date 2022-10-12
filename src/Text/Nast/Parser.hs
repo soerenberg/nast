@@ -46,6 +46,7 @@ module Text.Nast.Parser (
   , for
   , while
   , tilde
+  , printStmt
   ) where
 
 
@@ -466,6 +467,7 @@ statement :: Parser (Stmt ASTAnnotation)
 statement =   (try $ keyword "break" Break)
           <|> (try $ keyword "continue" Continue)
           <|> (try $ keyword "return" Return)
+          <|> try printStmt
           <|> block
           <|> try ifElse
           <|> try for
@@ -564,3 +566,11 @@ tilde = do l <- expression
            r <- completeCall i
            ys <- char ';' >> codeAnnotations
            return $ Tilde l r $ TildeAnn xs ys
+
+{-| Print statement -}
+printStmt :: Parser (Stmt ASTAnnotation)
+printStmt = do xs <- string "print" >> codeAnnotations <* char '('
+               ps <- printables
+               ys <- char ')' >> codeAnnotations
+               zs <- char ';' >> codeAnnotations
+               return $ Print ps $ PrintAnn xs ys zs

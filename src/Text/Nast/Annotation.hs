@@ -53,6 +53,10 @@ data ASTAnnotation = PrimaryAnn          -- ^ Primary expressions
                    | TildeAnn            -- ^ tilde statement
                      [CodeAnnotation]    -- ^ succeeding the @~@ symbol
                      [CodeAnnotation]    -- ^ succeeding the closing @;@
+                   | PrintAnn            -- ^ print statement
+                     [CodeAnnotation]    -- ^ succeeding the @print@ keyword
+                     [CodeAnnotation]    -- ^ succeeding the closing @)@
+                     [CodeAnnotation]    -- ^ succeeding the @;@
                    deriving (Eq, Show)
 
 -- | Annotations of source code (comments, linebreaks)

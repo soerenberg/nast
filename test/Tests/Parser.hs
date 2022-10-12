@@ -593,6 +593,18 @@ tests =
                      (Call id_x [] $ CallAnn [[]] [])
                      (TildeAnn [Bracketed "A"] [Bracketed "B"]))
     ]
+  , testGroup "print"
+    [ testCase "print(a,1);" $ parse statement "" "print(a,1);" @?=
+      (Right $ Print (Printables [id_a, lit_1] $ PrintablesAnn [[], []])
+                     (PrintAnn [] [] []))
+    , testCase "print/*A*/(a,1)/*B*/;/*C*/" $
+      parse statement "" "print/*A*/(a,1)/*B*/;/*C*/" @?=
+      (Right $ Print (Printables [id_a, lit_1] $ PrintablesAnn [[], []])
+                     (PrintAnn [Bracketed "A"] [Bracketed "B"]
+                               [Bracketed "C"]))
+    , testCase "print(); fails" $ assertBool ""
+      (isLeft $ parse statement "" "print();")
+    ]
   , testGroup "special cases"
     [ testCase "returnn = a;" $ parse statement "" "returnn = a;" @?=
       (Right $ Assign (Identifier "returnn" noPA) id_a $ AssignAnn [] [])
