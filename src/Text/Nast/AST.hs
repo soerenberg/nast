@@ -113,6 +113,9 @@ data Expr a = Conditional           -- ^ Ternary @?:@ conditional
             | StringLiteral         -- ^ String literal
               String                -- ^ literal
               a                     -- ^ annotation
+            | Printables            -- ^ printables
+              [Expr a]              -- ^ one or more expressions
+              a                     -- ^ annotation
             | Parens                -- ^ Parentheses expression
               (Expr a)              -- ^ Expression to be parenthesized
               a                     -- ^ annotation

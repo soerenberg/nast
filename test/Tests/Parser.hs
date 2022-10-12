@@ -4,6 +4,7 @@ import Text.Nast.Annotation (ASTAnnotation (..), CodeAnnotation (..))
 import Text.Nast.AST (Expr (..), Stmt (..))
 import Text.Nast.Parser
   ( expression
+  , printables
   , identifier
   , numLiteral
   , stringLiteral
@@ -357,6 +358,16 @@ tests =
                  (Just $ Identifier "q" $ PrimaryAnn [Bracketed "J"])
                  (BinaryAnn [Bracketed "I"])]
           (CallAnn [[Bracketed "G"]] [Bracketed "K"]))
+    ]
+  , testGroup "printables"
+    [ testCase "a" $ parse printables "" "a" @?=
+      (Right $ Printables [id_a] $ PrintablesAnn [[]])
+    , testCase "a, \"xy\", b" $ parse printables "" "a, \"xy\", b" @?=
+      (Right $ Printables [id_a, StringLiteral "xy" $ PrimaryAnn [], id_b] $
+               PrintablesAnn [[], [], []])
+    , testCase "/*A*/a,/*B*/b" $ parse printables "" "/*A*/a,/*B*/b" @?=
+      (Right $ Printables [id_a, id_b] $
+               PrintablesAnn [[Bracketed "A"], [Bracketed "B"]])
     ]
   , testGroup "range"
     [ testCase "range a" $ parse range "" "a" @?= (Right $ id_a)

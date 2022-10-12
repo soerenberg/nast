@@ -5,6 +5,7 @@ module Text.Nast.Parser (
   , stringLiteral
   -- * expressions
   , expression
+  , printables
   , precedence10
   , precedence9
   , precedence8
@@ -66,6 +67,7 @@ import Text.ParserCombinators.Parsec
   , oneOf
   , optionMaybe
   , sepBy
+  , sepBy1
   , sepEndBy
   , sepEndBy1
   , string
@@ -101,6 +103,13 @@ stringLiteral = do _ <- char '"'
 
 expression :: Parser (Expr ASTAnnotation)
 expression = precedence10
+
+{-| List of printables. Used in @print@ and @reject@ statements. -}
+printables :: Parser (Expr ASTAnnotation)
+printables = do xs <- p `sepBy1` char ','
+                let (as, es) = unzip xs
+                return $ Printables es $ PrintablesAnn as
+  where p = (,) <$> codeAnnotations <*> (stringLiteral <|> expression)
 
 {-|
 Precedence level 10 expressions

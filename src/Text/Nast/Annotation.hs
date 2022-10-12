@@ -12,6 +12,8 @@ data ASTAnnotation = PrimaryAnn          -- ^ Primary expressions
                    | UnaryAnn            -- ^ Unary expressions
                      [CodeAnnotation]    -- ^ succeeding (if prefix) or
                                          --   preceding (if postfix) operator
+                   | PrintablesAnn       -- ^ Printables
+                     [[CodeAnnotation]]  -- ^ succeeding each printable
                    | ParensAnn           -- ^ Parentheseses
                      [CodeAnnotation]    -- ^ succeeding opening @(@
                      [CodeAnnotation]    -- ^ succeeding closing @)@
