@@ -78,17 +78,21 @@ import Text.ParserCombinators.Parsec
 import Control.Monad (void)
 import qualified Data.Map as Map
 
-import Text.Nast.AST (Expr (..), Stmt (..))
-import Text.Nast.Annotation (ASTAnnotation (..), CodeAnnotation (..))
+import Text.Nast.AnnotatedAST
+  ( Expr (..)
+  , Stmt (..)
+  , Annotations
+  , CodeAnnotation (..)
+  )
 
 
 -- | Stan numeric literal
-numLiteral :: Parser (Expr ASTAnnotation)
+numLiteral :: Parser Expr
 numLiteral = do i <- signedInt
                 d <- optionMaybe (char '.' >> many1 digit)
                 e <- optionMaybe (char 'e' >> signedInt)
                 xs <- codeAnnotations
-                return $ NumLiteral i d e (PrimaryAnn xs)
+                return $ NumLiteral i d e xs
 
 -- | Signed integer number, e.g., @+3@, @-8@, @2@
 signedInt :: Parser String
@@ -98,22 +102,22 @@ signedInt = do plus <|> minus <|> nosign
           minus = (:) <$> char '-' <*> nosign
 
 -- | String literal, e.g. @"abc"@
-stringLiteral :: Parser (Expr ASTAnnotation)
+stringLiteral :: Parser Expr
 stringLiteral = do _ <- char '"'
                    s <- many $ noneOf "\n\""
                    _ <- char '"'
                    xs <- codeAnnotations
-                   return $ StringLiteral s (PrimaryAnn xs)
+                   return $ StringLiteral s xs
 
 -- | Stan expression
-expression :: Parser (Expr ASTAnnotation)
+expression :: Parser Expr
 expression = precedence10
 
 -- | List of printables. Used in @print@ and @reject@ statements.
-printables :: Parser (Expr ASTAnnotation)
+printables :: Parser Expr
 printables = do xs <- p `sepBy1` char ','
                 let (as, es) = unzip xs
-                return $ Printables es $ PrintablesAnn as
+                return $ Printables es as
   where p = (,) <$> codeAnnotations <*> (stringLiteral <|> expression)
 
 {-|
@@ -124,7 +128,7 @@ Precedence level 10 expressions
 Here, right associative means that @a ? b : c ? d : e@ is equivalent to
 @a ? b : (c ? d : e)@.
 -}
-precedence10 :: Parser (Expr ASTAnnotation)
+precedence10 :: Parser Expr
 -- Here we try to ensure that the precedence9 expression is only parsed once.
 -- For a parser of the form @try conditional <|> precedence9@ this might happen
 -- twice if there is in fact no ternary @?:@ operation. However, this is
@@ -137,29 +141,29 @@ precedence10 = do l <- precedence9
                   _ <- char ':'
                   ys <- codeAnnotations
                   r <- precedence10
-                  return $ Conditional l' m r (CondAnn xs ys)
+                  return $ Conditional l' xs m ys r
 
 {-|
 Precedence level 9 expressions
 
 * logical @||@ op, binary infix, left associative; "or" disjunction
 -}
-precedence9 :: Parser (Expr ASTAnnotation)
+precedence9 :: Parser Expr
 precedence9 = chainl1 precedence8 $ p
   where p = do _ <- string "||"
                xs <- codeAnnotations
-               return $ (\l r -> Or l r (BinaryAnn xs))
+               return $ (\l r -> Or l xs r)
 
 {-|
 Precedence level 8 expressions
 
 * logical @&&@ op, binary infix, left associative; "and" conjunction
 -}
-precedence8 :: Parser (Expr ASTAnnotation)
+precedence8 :: Parser Expr
 precedence8 = chainl1 precedence7 $ p
   where p = do _ <- string "&&"
                xs <- codeAnnotations
-               return $ (\l r -> And l r (BinaryAnn xs))
+               return $ (\l r -> And l xs r)
 
 {-|
 Precedence level 7 expressions
@@ -167,7 +171,7 @@ Precedence level 7 expressions
 * logical @==@ op, binary infix, left associative; equal to
 * logical @!=@ op, binary infix, left associative; not equal to
 -}
-precedence7 :: Parser (Expr ASTAnnotation)
+precedence7 :: Parser Expr
 precedence7 = chainl1 precedence6 $ binOp ["!=", "=="]
 
 {-|
@@ -178,7 +182,7 @@ Precedence level 6 expressions
 * @>@  op, binary infix, left associative; greater than
 * @>=@ op, binary infix, left associative; greater or equal than
 -}
-precedence6 :: Parser (Expr ASTAnnotation)
+precedence6 :: Parser Expr
 precedence6 = chainl1 precedence5 $ binOp ["<=", "<", ">=", ">"]
 
 {-|
@@ -187,7 +191,7 @@ Precedence level 5 expressions
 * @+@ op, binary infix, left associative; addition
 * @-@ op, binary infix, left associative; subtraction
 -}
-precedence5 :: Parser (Expr ASTAnnotation)
+precedence5 :: Parser Expr
 precedence5 = chainl1 precedence4 $ binOp ["+", "-"]
 
 {-|
@@ -199,7 +203,7 @@ Precedence level 4 expressions
 * @./@ op, binary infix, left associative; element-wise division
 * @%@ op, binary infix, left associative; modulo
 -}
-precedence4 :: Parser (Expr ASTAnnotation)
+precedence4 :: Parser Expr
 precedence4 = chainl1 precedence3 $ binOp ["*", "/", ".*", "./"]
 
 {-|
@@ -208,7 +212,7 @@ Precedence level 3 expressions
 * @\@ op, binary infix, left associative; left division
 * @%\%@ op, binary infix, left associative; integer division
 -}
-precedence3 :: Parser (Expr ASTAnnotation)
+precedence3 :: Parser Expr
 precedence3 = chainl1 precedence2 $ binOp ["\\", "%\\%"]
 
 {-|
@@ -218,13 +222,11 @@ Precedence level 2 expressions
 * @+@ op, unary prefix; promotion (no-op)
 * @-@ op, unary prefix; negation
 -}
-precedence2 :: Parser (Expr ASTAnnotation)
+precedence2 :: Parser Expr
 precedence2 = lneg <|> plus <|> minus <|> precedence1
-  where lneg  = char '!' >> flip LogicalNeg <$> unaryAnn <*> precedence2
-        plus  = char '+' >> flip UnaryPlus <$> unaryAnn <*> precedence2
-        minus = char '-' >> flip UnaryMinus <$> unaryAnn <*> precedence2
-        unaryAnn = do xs <- codeAnnotations
-                      return $ UnaryAnn xs
+  where lneg  = char '!' >> LogicalNeg <$> codeAnnotations <*> precedence2
+        plus  = char '+' >> UnaryPlus <$> codeAnnotations <*> precedence2
+        minus = char '-' >> UnaryMinus <$> codeAnnotations <*> precedence2
 
 {-|
 Precedence level 1 expressions
@@ -232,14 +234,14 @@ Precedence level 1 expressions
 * @^@ op, binary infix, right associative; exponentiation
 * @.^@ op, binary infix, right associative; element-wise exponentiation
 -}
-precedence1 :: Parser (Expr ASTAnnotation)
+precedence1 :: Parser Expr
 precedence1 = do e <- precedence0
                  (try $ char '^' >> completeBin Pow e) <|>
                    (try $ string ".^" >> completeBin EltPow e) <|>
                    return e
   where completeBin f e = do xs <- codeAnnotations
                              r <- precedence1
-                             return $ f e r (BinaryAnn xs)
+                             return $ f e xs r
 
 {-|
 Precedence level 0 expressions
@@ -248,33 +250,34 @@ Precedence level 0 expressions
 * @()@ function application
 * @[]@ array & matrix indexing
 -}
-precedence0 :: Parser (Expr ASTAnnotation)
+precedence0 :: Parser Expr
 precedence0 = do e <- primary  -- Parse primary only once for efficiency
                  (t e) <|> (completeCall e) <|> (completeIndex e) <|> (return e)
   where t e = do _ <- char '\''
                  xs <- codeAnnotations
-                 return $ Transpose e (UnaryAnn xs)
+                 return $ Transpose e xs
 
 {-|
 Complete function call. We assume that the call is already consumed and passed
 as an argument.
 -}
-completeCall :: Expr ASTAnnotation -> Parser (Expr ASTAnnotation)
+completeCall :: Expr -> Parser Expr
 completeCall = callLike '(' ')' Call expression
 
 {-|
 Complete array/vector/matrix expression. We assume that the object to be indexed
 is already consumed and passed as an argument.
 -}
-completeIndex :: Expr ASTAnnotation -> Parser (Expr ASTAnnotation)
+completeIndex :: Expr -> Parser Expr
 completeIndex e = do e' <- callLike '[' ']' Index range e
                      (completeIndex e' <|> return e')
 
-{-| Type synonym for type of 'Range' and 'Index' constructors -}
-type CallLikeConstr = Expr ASTAnnotation
-                    -> [Expr ASTAnnotation]
-                    -> ASTAnnotation
-                    -> Expr ASTAnnotation
+{-| Type synonym for type of 'Call' and 'Index' constructors -}
+type CallLikeConstr = Expr
+                    -> [Expr]
+                    -> [Annotations]
+                    -> Annotations
+                    -> Expr
 
 {-|
 Complete "call-like" expressions, i.e. function applications and array indexing.
@@ -286,14 +289,14 @@ callLike :: Char                           -- ^ Left delimiter, @(@ or @[@
          {-| Constructor for result, i.e., @Call@ or @Range@. -}
          -> CallLikeConstr
          {-| Parser for parsing a single argument or index -}
-         -> (Parser (Expr ASTAnnotation))
-         -> (Expr ASTAnnotation)           -- ^ Identifier (callee).
-         -> Parser (Expr ASTAnnotation)
+         -> (Parser Expr)
+         -> Expr                           -- ^ Identifier (callee).
+         -> Parser Expr
 callLike ld rd f p e = do _ <- char ld
                           (argAnns, args) <- (try withArgs) <|> withoutArgs
                           _ <- char rd
                           cs <- codeAnnotations
-                          return $ f e args (CallAnn argAnns cs)
+                          return $ f e args argAnns cs
   where -- first case: if there is at least one argument
         -- withArgs = do todo <- q `sepBy` (char ',')
         withArgs = do xs <- ((,) <$> codeAnnotations <*> p) `sepBy` (char ',')
@@ -312,7 +315,7 @@ Range
 Range expression as used in array indexing or for loop ranges. Examples:
 @1:10@, @:3@, @1:@, or @:@.
 -}
-range :: Parser (Expr ASTAnnotation)
+range :: Parser Expr
 range = do l <- optionMaybe $ try expression
            colon <- optionMaybe $ char ':'
            case (l, colon) of
@@ -320,7 +323,7 @@ range = do l <- optionMaybe $ try expression
              (Nothing, Nothing) -> fail "Cannot parse range"
              _ -> do cs <- codeAnnotations
                      r <- optionMaybe $ try expression
-                     return $ Range l r (BinaryAnn cs)
+                     return $ Range l cs r
 
 {-| Left-hand side expression
 
@@ -328,11 +331,11 @@ Expressions that are allowed on the left-hand side of assignments are
 identifiers with zero or more array/matrix indices, such as @idfr@, @idfr[3]@,
 @idfr[3][5]@ and so on
 -}
-lhs :: Parser (Expr ASTAnnotation)
+lhs :: Parser Expr
 lhs = do i <- identifier
          (completeIndex i) <|> (return i)
 
-primary :: Parser (Expr ASTAnnotation)
+primary :: Parser Expr
 primary = numLiteral <|> parentheses <|> identifier
 
 {-|
@@ -343,35 +346,35 @@ The following constraints must hold:
 * Must start with letter.
 * Must not end with two underscores: @__@.
 -}
-identifier :: Parser (Expr ASTAnnotation)
+identifier :: Parser Expr
 identifier = do x <- letter
                 xs <- many $ letter <|> digit <|> char '_'
                 let p = take 2 . reverse $ xs
                 ys <- codeAnnotations
                 if p == "__"
                   then fail "identifier must not end with '__'"
-                  else return $ Identifier (x:xs) (PrimaryAnn ys)
+                  else return $ Identifier (x:xs) ys
 
-parentheses :: Parser (Expr ASTAnnotation)
+parentheses :: Parser Expr
 parentheses = do _ <- char '('
                  xs <- codeAnnotations
                  e <- expression
                  _ <- char ')'
                  ys <- codeAnnotations
-                 return $ Parens e (ParensAnn xs ys)
+                 return $ Parens xs e ys
 
 {-| Type synonym for binary operation on expressions (`Expr`). -}
-type BinOp = Expr ASTAnnotation  -- ^ left-hand side
-           -> Expr ASTAnnotation -- ^ right-hand side
-           -> Expr ASTAnnotation
+type BinOp = Expr  -- ^ left-hand side
+           -> Expr -- ^ right-hand side
+           -> Expr
 
 {-| Type synonym for constructors of `Expr a` that represent binary Stan
 operations.
 -}
-type BinConstr = Expr ASTAnnotation  -- ^ left-hand side
-               -> Expr ASTAnnotation -- ^ right-hand side
-               -> ASTAnnotation      -- ^ annotations ofter op symbol
-               -> Expr ASTAnnotation
+type BinConstr = Expr               -- ^ left-hand side
+               -> Annotations       -- ^ annotations ofter op symbol
+               -> Expr              -- ^ right-hand side
+               -> Expr
 
 {-|
 Parse binary operation on `Expr a` operation, with annotations for the
@@ -388,7 +391,7 @@ binOp xs = do op <- binConstr xs
                 -- Note: than op is Nothing should never happen in practice
                 Nothing -> fail $ "Cannot identify binary op in " ++ (show xs)
                 (Just op') -> do as <- codeAnnotations
-                                 return (\l r -> op' l r (BinaryAnn as))
+                                 return (\l r -> op' l as r)
 
 {-|
 Parse constructor of binary `Expr` operation, e.g. `Add`, `Mul`.
@@ -422,11 +425,11 @@ binConstr xs = (flip Map.lookup toBinOp) <$>
           ]
 
 -- | Zero or more comments and newlines
-codeAnnotations :: Parser [CodeAnnotation]
+codeAnnotations :: Parser Annotations
 codeAnnotations = whitespace >> (newline <|> comment) `sepEndBy` whitespace
 
 -- | One or more comments and newlines
-codeAnnotations1 :: Parser [CodeAnnotation]
+codeAnnotations1 :: Parser Annotations
 codeAnnotations1 = try annotations <|> justWhitespaces
   where annotations = whitespace >> (newline <|> comment) `sepEndBy1` whitespace
         justWhitespaces = whitespace1 >> return []
@@ -464,7 +467,7 @@ whitespace1 :: Parser String
 whitespace1 = many1 $ oneOf " \t"
 
 -- | Parse statements
-statement :: Parser (Stmt ASTAnnotation)
+statement :: Parser Stmt
 statement =   (try $ keyword "break" Break)
           <|> (try $ keyword "continue" Continue)
           <|> (try $ keyword "return" Return)
@@ -479,49 +482,48 @@ statement =   (try $ keyword "break" Break)
           <?> "statement"
 
 -- | Parse keyword statement such as @break@ or @continue@
-keyword :: String                                 -- ^ keyword name
-        -> (ASTAnnotation -> Stmt ASTAnnotation)  -- ^ constructor for Stmt
-        -> Parser (Stmt ASTAnnotation)
-keyword k constr = do _ <- string k
-                      xs <- codeAnnotations
-                      _ <- char ';'
-                      ys <- codeAnnotations
-                      return $ constr $ KeywordAnn xs ys
+keyword :: String                                -- ^ keyword name
+        -> (Annotations -> Annotations -> Stmt)  -- ^ constructor for Stmt
+        -> Parser Stmt
+keyword k constr = do xs <- string k >> codeAnnotations
+                      ys <- char ';' >> codeAnnotations
+                      return $ constr xs ys
 
 -- | Parse block statement
-block :: Parser (Stmt ASTAnnotation)
+block :: Parser Stmt
 block = do _ <- char '{'
            xs <- codeAnnotations
            stmts <- many statement
            _ <- char '}'
            ys <- codeAnnotations
-           return $ Block stmts $ BlockAnn xs ys
+           return $ Block xs stmts ys
 
 -- | Parse if then (else) statements
-ifElse :: Parser (Stmt ASTAnnotation)
+ifElse :: Parser Stmt
 ifElse = do _ <- string "if"
             xs <- codeAnnotations
             cond <- parentheses
             stmt <- statement
             elseAnn <- optionMaybe $ try $ string "else" >> codeAnnotations
             case elseAnn of
-              Nothing -> return $ If cond stmt $ IfAnn xs
+              Nothing -> return $ If xs cond stmt
               Just ys -> do stmt' <- statement
-                            return $ IfElse cond stmt stmt' $ IfElseAnn xs ys
+                            return $ IfElse xs cond stmt ys stmt'
 
 -- | Parse assignment statement ops such as @=@, @<-@, @+=@, @*=@
-assignment :: Parser (Stmt ASTAnnotation)
+assignment :: Parser Stmt
 assignment = do l <- lhs
                 (xs, op) <- assignOp
                 r <- expression
                 ys <- char ';' >> codeAnnotations
-                return $ op l r $ AssignAnn xs ys
+                return $ op l xs r ys
 
 {-| Type synonym for construrtors assignment (Assign, PlusAssign, ...) nodes -}
-type AssignConstr = Expr ASTAnnotation   -- ^ left-hand side
-                  -> Expr ASTAnnotation  -- ^ right-hand side
-                  -> ASTAnnotation       -- ^ annotations after op token
-                  -> Stmt ASTAnnotation
+type AssignConstr = Expr          -- ^ left-hand side
+                  -> Annotations  -- ^ annotations after op token
+                  -> Expr         -- ^ right-hand side
+                  -> Annotations  -- ^ annotations after ; token
+                  -> Stmt
 
 {-| Parse assignment operator and return annotations & respective constructor -}
 assignOp :: Parser ([CodeAnnotation], AssignConstr)
@@ -538,7 +540,7 @@ assignOp = foldr1 (<|>) [p s f | (s, f) <- tokenConsts]
                       ]
 
 {-| Parse for-loop statement -}
-for :: Parser (Stmt ASTAnnotation)
+for :: Parser Stmt
 for = do xs <- string "for" >> codeAnnotations
          ys <- char '(' >> codeAnnotations
          i <- identifier
@@ -549,38 +551,39 @@ for = do xs <- string "for" >> codeAnnotations
          vs <- char ')' >> codeAnnotations
          b <- statement
          case opt_r of
-           (Just (ws, r)) -> return $ ForRange i l r b $
-                                      ForRangeAnn xs ys zs ws vs
-           _ -> return $ For i l b (ForAnn xs ys zs vs)
+           (Just (ws, r)) -> return $ ForRange xs ys i zs l ws r vs b
+           _ -> return $ For xs ys i zs l vs b
 
 {-| Parse while-loop statement -}
-while :: Parser (Stmt ASTAnnotation)
+while :: Parser Stmt
 while = do xs <- string "while" >> codeAnnotations
-           cond <- parentheses
+           ys <- char '(' >> codeAnnotations
+           cond <- expression
+           zs <- char ')' >> codeAnnotations
            b <- statement
-           return $ While cond b $ WhileAnn xs
+           return $ While xs ys cond zs b
 
 {-| Tilde statement -}
-tilde :: Parser (Stmt ASTAnnotation)
+tilde :: Parser Stmt
 tilde = do l <- expression
            xs <- char '~' >> codeAnnotations
            i <- identifier
            r <- completeCall i
            ys <- char ';' >> codeAnnotations
-           return $ Tilde l r $ TildeAnn xs ys
+           return $ Tilde l xs r ys
 
 {-| Print statement -}
-printStmt :: Parser (Stmt ASTAnnotation)
+printStmt :: Parser Stmt
 printStmt = do xs <- string "print" >> codeAnnotations <* char '('
                ps <- printables
                ys <- char ')' >> codeAnnotations
                zs <- char ';' >> codeAnnotations
-               return $ Print ps $ PrintAnn xs ys zs
+               return $ Print xs ps ys zs
 
 {-| Reject statement -}
-reject :: Parser (Stmt ASTAnnotation)
+reject :: Parser Stmt
 reject = do xs <- string "reject" >> codeAnnotations <* char '('
             ps <- printables
             ys <- char ')' >> codeAnnotations
             zs <- char ';' >> codeAnnotations
-            return $ Reject ps $ RejectAnn xs ys zs
+            return $ Reject xs ps ys zs

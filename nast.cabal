@@ -26,7 +26,7 @@ source-repository head
 library
   exposed-modules:
       Text.Nast
-      Text.Nast.Annotation
+      Text.Nast.AnnotatedAST
       Text.Nast.AST
       Text.Nast.Parser
   other-modules:
