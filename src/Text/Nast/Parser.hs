@@ -26,8 +26,8 @@ module Text.Nast.Parser (
   , primary
   , identifier
   , parentheses
+  , BinConstr
   , binOp
-  , binConstr
   -- * code annotations
   , codeAnnotations
   , codeAnnotations1
@@ -76,7 +76,6 @@ import Text.ParserCombinators.Parsec
   , try
   )
 import Control.Monad (void)
-import qualified Data.Map as Map
 
 import Text.Nast.AnnotatedAST
   ( Expr (..)
@@ -144,9 +143,7 @@ Precedence level 9 expressions
 * logical @||@ op, binary infix, left associative; "or" disjunction
 -}
 precedence9 :: Parser Expr
-precedence9 = chainl1 precedence8 $ p
-  where p = do xs <- string "||" >> codeAnnotations
-               return $ (\l r -> Or l xs r)
+precedence9 = chainl1 precedence8 $ binOp "||" Or
 
 {-|
 Precedence level 8 expressions
@@ -154,9 +151,7 @@ Precedence level 8 expressions
 * logical @&&@ op, binary infix, left associative; "and" conjunction
 -}
 precedence8 :: Parser Expr
-precedence8 = chainl1 precedence7 $ p
-  where p = do xs <- string "&&" >> codeAnnotations
-               return $ (\l r -> And l xs r)
+precedence8 = chainl1 precedence7 $ binOp "&&" And
 
 {-|
 Precedence level 7 expressions
@@ -165,7 +160,7 @@ Precedence level 7 expressions
 * logical @!=@ op, binary infix, left associative; not equal to
 -}
 precedence7 :: Parser Expr
-precedence7 = chainl1 precedence6 $ binOp ["!=", "=="]
+precedence7 = chainl1 precedence6 $ binOp "!=" NotEqual <|> binOp "==" Equal
 
 {-|
 Precedence level 6 expressions
@@ -176,7 +171,11 @@ Precedence level 6 expressions
 * @>=@ op, binary infix, left associative; greater or equal than
 -}
 precedence6 :: Parser Expr
-precedence6 = chainl1 precedence5 $ binOp ["<=", "<", ">=", ">"]
+precedence6 = chainl1 precedence5 op
+  where op = try (binOp "<=" Leq)
+             <|> binOp "<" Lt
+             <|> try (binOp ">=" Geq)
+             <|> binOp ">" Gt
 
 {-|
 Precedence level 5 expressions
@@ -185,7 +184,7 @@ Precedence level 5 expressions
 * @-@ op, binary infix, left associative; subtraction
 -}
 precedence5 :: Parser Expr
-precedence5 = chainl1 precedence4 $ binOp ["+", "-"]
+precedence5 = chainl1 precedence4 $ binOp "+" Add <|> binOp "-" Sub
 
 {-|
 Precedence level 4 expressions
@@ -197,7 +196,11 @@ Precedence level 4 expressions
 * @%@ op, binary infix, left associative; modulo
 -}
 precedence4 :: Parser Expr
-precedence4 = chainl1 precedence3 $ binOp ["*", "/", ".*", "./"]
+precedence4 = chainl1 precedence3 op
+  where op = binOp "*" Mul
+             <|> binOp "/" Div
+             <|> try (binOp ".*" EltMul)
+             <|> binOp "./" EltDiv
 
 {-|
 Precedence level 3 expressions
@@ -206,7 +209,8 @@ Precedence level 3 expressions
 * @%\%@ op, binary infix, left associative; integer division
 -}
 precedence3 :: Parser Expr
-precedence3 = chainl1 precedence2 $ binOp ["\\", "%\\%"]
+-- precedence3 = chainl1 precedence2 $ binOp ["\\", "%\\%"]
+precedence3 = chainl1 precedence2 $ binOp "\\" LDiv <|> binOp "%\\%" IntDiv
 
 {-|
 Precedence level 2 expressions
@@ -352,11 +356,6 @@ parentheses = do xs <- char '(' >> codeAnnotations
                  ys <- char ')' >> codeAnnotations
                  return $ Parens xs e ys
 
-{-| Type synonym for binary operation on expressions (`Expr`). -}
-type BinOp = Expr  -- ^ left-hand side
-           -> Expr -- ^ right-hand side
-           -> Expr
-
 {-| Type synonym for constructors of `Expr a` that represent binary Stan
 operations.
 -}
@@ -365,53 +364,10 @@ type BinConstr = Expr               -- ^ left-hand side
                -> Expr              -- ^ right-hand side
                -> Expr
 
-{-|
-Parse binary operation on `Expr a` operation, with annotations for the
-underlying infix symbol. Thus, this is a helper function to parse binary
-stan ops
-
-For a given list of expected symbols will return the first successfully parsed
-candidate. Thus, @binConstr ["<", "<="]@ and @binConstr ["<=", "<"]@ are
-generally not equivalent (the latter is probably the desired call).
--}
-binOp :: [String] -> Parser BinOp
-binOp xs = do op <- binConstr xs
-              case op of
-                -- Note: than op is Nothing should never happen in practice
-                Nothing -> fail $ "Cannot identify binary op in " ++ (show xs)
-                (Just op') -> do as <- codeAnnotations
-                                 return (\l r -> op' l as r)
-
-{-|
-Parse constructor of binary `Expr` operation, e.g. `Add`, `Mul`.
-
-For a given list of expected symbols will return the first successfully parsed
-candidate. Thus, @binConstr ["<", "<="]@ and @binConstr ["<=", "<"]@ are
-generally not equivalent (the latter is probably the desired call).
--}
-binConstr :: [String]  -- ^ List of expected symbols, e.g. @["+", "-"]@.
-          -> Parser (Maybe BinConstr)
-binConstr xs = (flip Map.lookup toBinOp) <$>
-                 (foldl1 (<|>) $ map (try . string) xs)
-  where toBinOp :: Map.Map String BinConstr
-        toBinOp = Map.fromList
-          [ ("==",   Equal)
-          , ("!=",   NotEqual)
-          , (">",    Gt)
-          , (">=",   Geq)
-          , ("<",    Lt)
-          , ("<=",   Leq)
-          , ("+",    Add)
-          , ("-",    Sub)
-          , ("*",    Mul)
-          , ("/",    Div)
-          , (".*",   EltMul)
-          , ("./",   EltDiv)
-          , ("\\",   LDiv)
-          , ("%\\%", IntDiv)
-          , ("^",    Pow)
-          , (".^",   EltPow)
-          ]
+{-| Parse annotated binary operator on expressions -}
+binOp :: String -> BinConstr -> Parser (Expr -> Expr -> Expr)
+binOp s c = do xs <- string s >> codeAnnotations
+               return $ (\l r -> c l xs r)
 
 -- | Zero or more comments and newlines
 codeAnnotations :: Parser Annotations
