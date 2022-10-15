@@ -241,6 +241,8 @@ data Stmt = Break             -- ^ @break@ statement
             Expr              -- ^ printables
             Annotations       -- ^ succeeding the closing @)@
             Annotations       -- ^ succeeding the @;@
+          | Empty             -- ^ empty statement, i.e. @;@
+            Annotations       -- ^ succeeding the @;@ symbol
           deriving (Eq, Show)
 
 

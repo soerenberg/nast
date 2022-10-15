@@ -49,6 +49,7 @@ module Text.Nast.Parser (
   , printStmt
   , reject
   , targetPlusAssign
+  , emptyStmt
   ) where
 
 
@@ -424,6 +425,7 @@ statement =   (try $ keyword "break" Break)
           <|> try targetPlusAssign
           <|> try assignment
           <|> try tilde
+          <|> emptyStmt
           <?> "statement"
 
 -- | Parse keyword statement such as @break@ or @continue@
@@ -544,3 +546,6 @@ targetPlusAssign = do xs <- string "target" >> codeAnnotations
                       e <- expression
                       zs <- char ';' >> codeAnnotations
                       return $ TargetPlusAssign xs ys e zs
+
+emptyStmt :: Parser Stmt
+emptyStmt = char ';' >> codeAnnotations >>= return . Empty

@@ -587,6 +587,11 @@ tests =
     , testCase "reject(); fails" $ assertBool ""
       (isLeft $ parse statement "" "reject();")
     ]
+  , testGroup "empty stmt"
+    [ testCase ";" $ parse statement "" ";" @?= (Right $ Empty [])
+    , testCase ";/*A*/" $ parse statement "" ";/*A*/" @?=
+      (Right $ Empty [Bracketed "A"])
+    ]
   , testGroup "special cases"
     [ testCase "returnn = a;" $ parse statement "" "returnn = a;" @?=
       (Right $ Assign (Identifier "returnn" []) [] id_a [])
