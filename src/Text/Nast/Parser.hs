@@ -49,6 +49,7 @@ module Text.Nast.Parser (
   , printStmt
   , reject
   , targetPlusAssign
+  , incrementLogProb
   , emptyStmt
   ) where
 
@@ -423,6 +424,7 @@ statement =   (try $ keyword "break" Break)
           <|> try for
           <|> try while
           <|> try targetPlusAssign
+          <|> try incrementLogProb
           <|> try assignment
           <|> try tilde
           <|> emptyStmt
@@ -546,6 +548,15 @@ targetPlusAssign = do xs <- string "target" >> codeAnnotations
                       e <- expression
                       zs <- char ';' >> codeAnnotations
                       return $ TargetPlusAssign xs ys e zs
+
+{-| Increment log prob call -}
+incrementLogProb :: Parser Stmt
+incrementLogProb = do xs <- string "increment_log_prob" >> codeAnnotations
+                      ys <- char '(' >> codeAnnotations
+                      e <- expression
+                      zs <- char ')' >> codeAnnotations
+                      vs <- char ';' >> codeAnnotations
+                      return $ IncrementLogProb xs ys e zs vs
 
 emptyStmt :: Parser Stmt
 emptyStmt = char ';' >> codeAnnotations >>= return . Empty

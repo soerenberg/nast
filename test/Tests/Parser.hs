@@ -534,6 +534,15 @@ tests =
       (Right $ TargetPlusAssign [Bracketed "A"] [Bracketed "B"] id_a
                                 [Bracketed "C"])
     ]
+  , testGroup "increment_log_prob"
+    [ testCase "increment_log_prob(a);" $
+      parse statement "" "increment_log_prob(a);" @?=
+      (Right $ IncrementLogProb [] [] id_a [] [])
+    , testCase "increment_log_prob/*A*/(/*B*/a)/*C*/;/*D*/" $
+      parse statement "" "increment_log_prob/*A*/(/*B*/a)/*C*/;/*D*/" @?=
+      (Right $ IncrementLogProb [Bracketed "A"] [Bracketed "B"] id_a
+                                [Bracketed "C"] [Bracketed "D"])
+    ]
   , testGroup "for loop"
     [ testCase "for (x in a) return;" $
       parse statement "" "for (x in a) return;" @?=

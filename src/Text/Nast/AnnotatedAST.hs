@@ -202,6 +202,12 @@ data Stmt = Break             -- ^ @break@ statement
             Annotations       -- ^ succeeding the @+=@ symbol
             Expr              -- ^ right-hand side
             Annotations       -- ^ succeeding the @;@ symbol
+          | IncrementLogProb  -- ^ increment log prob (@increment_log_prob(..)@)
+            Annotations       -- ^ succeeding the @increment_log_prob@ keyword
+            Annotations       -- ^ succeeding the opening @(@ symbol
+            Expr              -- ^ parameter
+            Annotations       -- ^ succeeding the closing @)@ symbol
+            Annotations       -- ^ succeeding the @;@ symbol
           | For               -- ^ for loop without range (@for (.. in ..)@)
             Annotations       -- ^ succeeding the @for@ keyword
             Annotations       -- ^ succeeding the opening @(@
