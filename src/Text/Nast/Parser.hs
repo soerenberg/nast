@@ -48,6 +48,7 @@ module Text.Nast.Parser (
   , tilde
   , printStmt
   , reject
+  , targetPlusAssign
   ) where
 
 
@@ -420,6 +421,7 @@ statement =   (try $ keyword "break" Break)
           <|> try ifElse
           <|> try for
           <|> try while
+          <|> try targetPlusAssign
           <|> try assignment
           <|> try tilde
           <?> "statement"
@@ -527,3 +529,11 @@ reject = do xs <- string "reject" >> codeAnnotations <* char '('
             ys <- char ')' >> codeAnnotations
             zs <- char ';' >> codeAnnotations
             return $ Reject xs ps ys zs
+
+{-| Target plus-assign statement, e.g., @target += expr;@. -}
+targetPlusAssign :: Parser Stmt
+targetPlusAssign = do xs <- string "target" >> codeAnnotations
+                      ys <- string "+=" >> codeAnnotations
+                      e <- expression
+                      zs <- char ';' >> codeAnnotations
+                      return $ TargetPlusAssign xs ys e zs

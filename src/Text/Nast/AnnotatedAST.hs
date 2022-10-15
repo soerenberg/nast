@@ -196,6 +196,11 @@ data Stmt = Break             -- ^ @break@ statement
             Annotations       -- ^ succeeding the @./=@ symbol
             Expr              -- ^ right-hand side
             Annotations       -- ^ succeeding the @;@ symbol
+          | TargetPlusAssign  -- ^ increment target (@target += expr;@)
+            Annotations       -- ^ succeeding the @target@ keyword
+            Annotations       -- ^ succeeding the @+=@ symbol
+            Expr              -- ^ right-hand side
+            Annotations       -- ^ succeeding the @;@ symbol
           | For               -- ^ for loop without range (@for (.. in ..)@)
             Annotations       -- ^ succeeding the @for@ keyword
             Annotations       -- ^ succeeding the opening @(@

@@ -520,6 +520,14 @@ tests =
       (Right $ EltDivideAssign (Identifier "a" [Bracketed "A"]) [Newline]
                                (Identifier "b" [Bracketed "B"]) [Bracketed "C"])
     ]
+  , testGroup "increment target"
+    [ testCase "target += a;" $ parse statement "" "target += a;" @?=
+      (Right $ TargetPlusAssign [] [] id_a [])
+    , testCase "target/*A*/+=/*B*/a;/*C*/" $
+      parse statement "" "target/*A*/+=/*B*/a;/*C*/" @?=
+      (Right $ TargetPlusAssign [Bracketed "A"] [Bracketed "B"] id_a
+                                [Bracketed "C"])
+    ]
   , testGroup "for loop"
     [ testCase "for (x in a) return;" $
       parse statement "" "for (x in a) return;" @?=
