@@ -1,6 +1,15 @@
 module Tests.Parser (tests) where
 
-import Text.Nast.AnnotatedAST (Expr (..), Stmt (..), CodeAnnotation (..))
+import Text.Nast.AnnotatedAST
+  ( Expr (..)
+  , Stmt (..)
+  , CodeAnnotation (..)
+  , VarDecl (..)
+  , VarType (..)
+  , VarConstraints (..)
+  , VarConstraint (..)
+  )
+
 import Text.Nast.Parser
   ( expression
   , printables
@@ -13,6 +22,8 @@ import Text.Nast.Parser
   , whitespace
   , statement
   , lhs
+  , varDeclaration
+  , varType
   )
 
 import Text.ParserCombinators.Parsec (parse)
@@ -612,6 +623,89 @@ tests =
       (Right $ Assign (Identifier "if_" []) [] id_a [])
     , testCase "else_ = a;" $ parse statement "" "else_ = a;" @?=
       (Right $ Assign (Identifier "else_" []) [] id_a [])
+    ]
+  , testGroup "top var types"
+    [ testCase "int" $ parse (varType True) "" "int" @?=
+      (Right $ Int [] Nothing)
+    , testCase "real" $ parse (varType True) "" "real" @?=
+      (Right $ Real [] Nothing)
+    , testCase "real'" $ parse (varType False) "" "real" @?=
+      (Right $ Real [] Nothing)
+    , testCase "complex" $ parse (varType True) "" "complex" @?=
+      (Right $ Complex [] Nothing)
+    , testCase "int/*A*/" $ parse (varType True) "" "int/*A*/" @?=
+      (Right $ Int [Bracketed "A"] Nothing)
+    , testCase "real/*A*/" $ parse (varType True) "" "real/*A*/" @?=
+      (Right $ Real [Bracketed "A"] Nothing)
+    , testCase "complex/*A*/" $ parse (varType True) "" "complex/*A*/" @?=
+      (Right $ Complex [Bracketed "A"] Nothing)
+    , testCase "int<upper=a,lower=b>" $
+      parse (varType True) "" "int<upper=a,lower=b>"
+      @?= (Right $ Int [] (Just $ VarConstraints [ Upper [] [] [] id_a
+                                                 , Lower [] [] [] id_b]
+                                                 []))
+    , testCase "int<lower=a,upper=b>" $
+      parse (varType True) "" "int<lower=a,upper=b>"
+      @?= (Right $ Int [] (Just $ VarConstraints [ Lower [] [] [] id_a
+                                                 , Upper [] [] [] id_b]
+                                                 []))
+    , testCase "real<offset=b>" $
+      parse (varType True) "" "int<offset=b>"
+      @?= (Right $ Int [] (Just $ VarConstraints [Offset [] [] [] id_b] []))
+    , testCase "annotated real" $
+      parse (varType True) ""
+      "real/*A*/</*B*/lower/*C*/=/*D*/a/*E*/,/*F*/upper/*G*/=/*H*/b/*I*/>/*J*/"
+      @?= (Right $ Real [Bracketed "A"]
+                        (Just $ VarConstraints
+                                 [ Lower [Bracketed "B"] [Bracketed "C"]
+                                         [Bracketed "D"]
+                                         (Identifier "a" [Bracketed "E"])
+                                 , Upper [Bracketed "F"] [Bracketed "G"]
+                                         [Bracketed "H"]
+                                         (Identifier "b" [Bracketed "I"])
+                                 ]
+                                 [Bracketed "J"]))
+    ]
+  , testGroup "top var declarations"
+    [ testCase "int x = a;" $
+      parse (varDeclaration True True) "" "int x = a;" @?=
+      (Right $ VarDeclAssign (Int [] Nothing) id_x  [] id_a [])
+    , testCase "real x = 1;" $
+      parse (varDeclaration True True) "" "real x = 1;" @?=
+      (Right $ VarDeclAssign (Real [] Nothing) id_x [] lit_1 [])
+    , testCase "real x;" $
+      parse (varDeclaration True True) "" "real x;" @?=
+      (Right $ VarDecl (Real [] Nothing) id_x [])
+    , testCase "annotated vec" $
+      parse (varDeclaration True True) ""
+      "vector/*A*/[/*B*/3]/*C*/ x =/*D*/2;/*E*/" @?=
+      (Right $ VarDeclAssign
+                 (Vector [Bracketed "A"] Nothing [Bracketed "B"] lit_3
+                         [Bracketed "C"])
+                 id_x [Bracketed "D"] lit_2 [Bracketed "E"])
+    , testCase "annotated mat" $
+      parse (varDeclaration True True) ""
+      "matrix/*A*/[/*B*/3,/*C*/1]/*D*/ x =/*E*/2;/*F*/" @?=
+      (Right $ VarDeclAssign
+                 (Matrix [Bracketed "A"] Nothing [Bracketed "B"] lit_3
+                         [Bracketed "C"] lit_1 [Bracketed "D"])
+                 id_x [Bracketed "E"] lit_2 [Bracketed "F"])
+    , testCase "cholesky_factor_mat" $
+      parse (varDeclaration True True) "" "cholesky_factor_cov[p] x;" @?=
+      (Right $ VarDecl (CholeskyFactorCov [] [] id_p Nothing []) id_x [])
+    , testCase "cholesky_factor_mat'" $
+      parse (varDeclaration True True) "" "cholesky_factor_cov[p,q] x;" @?=
+      (Right $ VarDecl (CholeskyFactorCov [] [] id_p
+                           (Just $ ([], id_q)) []) id_x [])
+    ]
+  , testGroup "top var declarations fail"
+    [ testCase "i)" $ assertBool "i)"
+      (isLeft $ parse (varDeclaration False True) "" "int<lower=0> i;")
+    , testCase "ii)" $ assertBool "ii)"
+      (isLeft $ parse (varDeclaration True False) "" "int<lower=0> i = 0;")
+    , testCase "v)" $ assertBool "v)"
+      (isLeft $ parse (varDeclaration True True) ""
+      "real<> i;")
     ]
   ]
 

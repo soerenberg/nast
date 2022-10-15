@@ -5,6 +5,7 @@ module Text.Nast.Parser (
   , stringLiteral
   -- * expressions
   , expression
+  , constrExpression
   , printables
   , precedence10
   , precedence9
@@ -51,6 +52,17 @@ module Text.Nast.Parser (
   , targetPlusAssign
   , incrementLogProb
   , emptyStmt
+  -- * declarations and var types
+  , AllowVarConstraints
+  , AllowAssignment
+  , varDeclaration
+  , varType
+  , varConstraint
+  , varConstraints
+  , scalarVarType
+  , vectorVarType
+  , matrixVarType
+  , matrixOptDimsVarType
   ) where
 
 
@@ -79,12 +91,22 @@ import Text.ParserCombinators.Parsec
   , try
   )
 import Control.Monad (void)
+import Data.Maybe (maybeToList)
 
 import Text.Nast.AnnotatedAST
   ( Expr (..)
   , Stmt (..)
   , Annotations
   , CodeAnnotation (..)
+  , VarDecl (..)
+  , VarType (..)
+  , ScalarVarType
+  , VectorVarType
+  , VectorNoConstrVarType
+  , MatrixVarType
+  , MatrixOptDimsVarType
+  , VarConstraints (..)
+  , VarConstraint (..)
   )
 
 
@@ -112,6 +134,10 @@ stringLiteral = do s <- char '"' >> (many $ noneOf "\n\"")
 -- | Stan expression
 expression :: Parser Expr
 expression = precedence10
+
+-- | Constrained expression, as used for type constraints
+constrExpression :: Parser Expr
+constrExpression = precedence5
 
 -- | List of printables. Used in @print@ and @reject@ statements.
 printables :: Parser Expr
@@ -560,3 +586,138 @@ incrementLogProb = do xs <- string "increment_log_prob" >> codeAnnotations
 
 emptyStmt :: Parser Stmt
 emptyStmt = char ';' >> codeAnnotations >>= return . Empty
+
+-- | allow variable constraints in declaration
+type AllowVarConstraints = Bool
+
+-- | allow initial assignment in the right-hand side of declaration
+type AllowAssignment = Bool
+
+-- | top var declaration
+varDeclaration :: AllowVarConstraints  -- ^ allow var constraints
+                  -> AllowAssignment      -- ^ allow initial assignments
+                  -> Parser VarDecl
+varDeclaration allowConstraints allowAssignment =
+  do t <- varType allowConstraints
+     i <- identifier
+     if allowAssignment
+       then do optAssign <- try $ optionMaybe assign
+               ys <- char ';' >> codeAnnotations
+               case optAssign of
+                 (Just (xs, rhs)) -> return $ VarDeclAssign t i xs rhs ys
+                 _ -> return $ VarDecl t i ys
+       else do ys <- char ';' >> codeAnnotations
+               return $ VarDecl t i ys
+  where assign =  do xs <- char '=' >> codeAnnotations
+                     rhs <- expression
+                     return (xs, rhs)
+
+-- | top var types
+varType :: AllowVarConstraints -> Parser VarType
+varType a = foldr1 (<|>) (map try ps)
+  where
+    ps = [ scalarVarType "int" a Int
+         , scalarVarType "real" a Real
+         , scalarVarType "complex" a Complex
+         , vectorVarType "vector" a Vector
+         , vectorVarType "row_vector" a RowVector
+         , matrixVarType "matrix" a Matrix
+         , vectorVarType "complex_vector" a ComplexVector
+         , vectorVarType "complex_row_vector" a ComplexRowVector
+         , matrixVarType "complex_matrix" a ComplexMatrix
+         , vectorNoConstrVarType "ordered" Ordered
+         , vectorNoConstrVarType "positive_ordered" PositiveOrdered
+         , vectorNoConstrVarType "simplex" Simplex
+         , vectorNoConstrVarType "unit_vector" UnitVector
+         , vectorNoConstrVarType "cholesky_factor_corr" CholeskyFactorCorr
+         , matrixOptDimsVarType "cholesky_factor_cov" CholeskyFactorCov
+         , vectorNoConstrVarType "corr_matrix" CorrMatrix
+         , vectorNoConstrVarType "cov_matrix" CovMatrix
+         ]
+
+-- | variable constraint (upper/lower bounds, multiplier/offset)
+varConstraint :: Parser VarConstraint
+varConstraint = foldr1 (<|>) (map try ps)
+  where ps = [ p "lower" Lower
+             , p "upper" Upper
+             , p "multiplier" Multiplier
+             , p "offset" Offset
+             ]
+        p s f = do xs <- codeAnnotations
+                   ys <- string s >> codeAnnotations
+                   zs <- char '=' >> codeAnnotations
+                   e <- constrExpression
+                   return $ f xs ys zs e
+
+-- | one or two variable constraints, e.g. @<lower=0,upper=1>@
+varConstraints :: Parser VarConstraints
+varConstraints = do _ <- char '<'
+                    vcl <- varConstraint
+                    vcr <- optionMaybe $ char ',' >> varConstraint
+                    let vcs = vcl : (maybeToList vcr)
+                    ys <- char '>' >> codeAnnotations
+                    return $ VarConstraints vcs ys
+
+-- | create parser for scalar `VarType`s
+scalarVarType :: String                  -- ^ type name
+                 -> AllowVarConstraints  -- ^ allow var constraints
+                 -> ScalarVarType        -- ^ scalar `VarType` constructor
+                 -> Parser VarType
+scalarVarType s a f = do xs <- string s >> codeAnnotations
+                         vc <- if a
+                                then optionMaybe varConstraints
+                                else return Nothing
+                         return $ f xs vc
+
+-- | create parser for vector `VarType`s
+vectorVarType :: String               -- ^ type name
+              -> AllowVarConstraints  -- ^ allow var constraints
+              -> VectorVarType        -- ^ vector `VarType` constructor
+              -> Parser VarType
+vectorVarType s a f = do xs <- string s >> codeAnnotations
+                         vc <- if a
+                                then optionMaybe varConstraints
+                                else return Nothing
+                         ys <- char '[' >> codeAnnotations
+                         d <- expression
+                         zs <- char ']' >> codeAnnotations
+                         return $ f xs vc ys d zs
+
+-- | create parser for vector `VarType`s that must not have constraints
+vectorNoConstrVarType :: String
+                      -> VectorNoConstrVarType
+                      -> Parser VarType
+vectorNoConstrVarType s f = do xs <- string s >> codeAnnotations
+                               ys <- char '[' >> codeAnnotations
+                               d <- expression
+                               zs <- char ']' >> codeAnnotations
+                               return $ f xs ys d zs
+
+-- | create parser for matrix `VarType`s
+matrixVarType :: String                  -- ^ type name
+                 -> AllowVarConstraints  -- ^ allow var constraints
+                 -> MatrixVarType        -- ^ vector `VarType` constructor
+                 -> Parser VarType
+matrixVarType s a f = do xs <- string s >> codeAnnotations
+                         vc <- if a
+                                then optionMaybe varConstraints
+                                else return Nothing
+                         ys <- char '[' >> codeAnnotations
+                         d1 <- expression
+                         zs <- char ',' >> codeAnnotations
+                         d2 <- expression
+                         vs <- char ']' >> codeAnnotations
+                         return $ f xs vc ys d1 zs d2 vs
+
+-- | create parser for matrix `VarType`s with optional second dimensions
+matrixOptDimsVarType :: String
+                     -> MatrixOptDimsVarType
+                     -> Parser VarType
+matrixOptDimsVarType s f = do xs <- string s >> codeAnnotations
+                              ys <- char '[' >> codeAnnotations
+                              d1 <- expression
+                              ad2 <- optionMaybe $
+                                      (,) <$> (char ',' >> codeAnnotations)
+                                          <*> expression
+                              zs <- char ']' >> codeAnnotations
+                              return $ f xs ys d1 ad2 zs

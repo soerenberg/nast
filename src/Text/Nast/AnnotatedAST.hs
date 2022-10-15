@@ -3,6 +3,15 @@ module Text.Nast.AnnotatedAST
  , Stmt (..)
  , CodeAnnotation (..)
  , Annotations
+ , VarDecl (..)
+ , VarType (..)
+ , ScalarVarType
+ , VectorVarType
+ , VectorNoConstrVarType
+ , MatrixVarType
+ , MatrixOptDimsVarType
+ , VarConstraints (..)
+ , VarConstraint (..)
  ) where
 
 
@@ -250,6 +259,181 @@ data Stmt = Break             -- ^ @break@ statement
           | Empty             -- ^ empty statement, i.e. @;@
             Annotations       -- ^ succeeding the @;@ symbol
           deriving (Eq, Show)
+
+
+-- | top var decleration
+data VarDecl = VarDecl        -- ^ declaration without assignment
+               VarType        -- ^ type
+               Expr              -- ^ identifier
+               Annotations       -- ^ after @;@ symbol
+             | VarDeclAssign  -- ^ declaration with assignment
+               VarType        -- ^ type
+               Expr              -- ^ identifier
+               Annotations       -- ^ after @=@ symbol
+               Expr              -- ^ right-hand side of assignment
+               Annotations       -- ^ after @;@ symbol
+             deriving (Eq, Show)
+
+-- | top var type
+data VarType = Int                           -- ^ integer
+               Annotations                   -- ^ after @int@
+               (Maybe VarConstraints)        -- ^ constraints
+             | Real                          -- ^ real number
+               Annotations                   -- ^ after @real@
+               (Maybe VarConstraints)        -- ^ constraints
+             | Complex                       -- ^ complex number
+               Annotations                   -- ^ after @complex@
+               (Maybe VarConstraints)        -- ^ constraints
+             | Vector                        -- ^ real vector
+               Annotations                   -- ^ after @vector@
+               (Maybe VarConstraints)        -- ^ constraints
+               Annotations                   -- ^ after @[@
+               Expr                          -- ^ dimensions
+               Annotations                   -- ^ after @]@
+             | RowVector                     -- ^ row vector
+               Annotations                   -- ^ after @row_vector@
+               (Maybe VarConstraints)        -- ^ constraints
+               Annotations                   -- ^ after @[@
+               Expr                          -- ^ dimensions
+               Annotations                   -- ^ after @]@
+             | Matrix                        -- ^ real matrix
+               Annotations                   -- ^ after @matrix@
+               (Maybe VarConstraints)        -- ^ constraints
+               Annotations                   -- ^ after @[@
+               Expr                          -- ^ first dimensions
+               Annotations                   -- ^ after @,@
+               Expr                          -- ^ second dimensions
+               Annotations                   -- ^ after @]@
+             | ComplexVector                 -- ^ complex vector
+               Annotations                   -- ^ after @complex_vector@
+               (Maybe VarConstraints)        -- ^ constraints
+               Annotations                   -- ^ after @[@
+               Expr                          -- ^ dimensions
+               Annotations                   -- ^ after @]@
+             | ComplexRowVector              -- ^ complex row vector
+               Annotations                   -- ^ after @complex_row_vector@
+               (Maybe VarConstraints)        -- ^ constraints
+               Annotations                   -- ^ after @[@
+               Expr                          -- ^ dimensions
+               Annotations                   -- ^ after @]@
+             | ComplexMatrix                 -- ^ complex real matrix
+               Annotations                   -- ^ after @complex_matrix@
+               (Maybe VarConstraints)        -- ^ constraints
+               Annotations                   -- ^ after @[@
+               Expr                          -- ^ first dimensions
+               Annotations                   -- ^ after @,@
+               Expr                          -- ^ second dimensions
+               Annotations                   -- ^ after @]@
+             | Ordered                       -- ^ ordered real vector
+               Annotations                   -- ^ after @ordered@
+               Annotations                   -- ^ after @[@
+               Expr                          -- ^ dimensions
+               Annotations                   -- ^ after @]@
+             | PositiveOrdered               -- ^ positive ordered vector
+               Annotations                   -- ^ after @positive_ordered@
+               Annotations                   -- ^ after @[@
+               Expr                          -- ^ dimensions
+               Annotations                   -- ^ after @]@
+             | Simplex                       -- ^ element in simplex
+               Annotations                   -- ^ after @simplex@
+               Annotations                   -- ^ after @[@
+               Expr                          -- ^ dimensions
+               Annotations                   -- ^ after @]@
+             | UnitVector                    -- ^ unit vector
+               Annotations                   -- ^ after @unit_vector@
+               Annotations                   -- ^ after @[@
+               Expr                          -- ^ dimensions
+               Annotations                   -- ^ after @]@
+             | CholeskyFactorCorr            -- ^ cholesky factor correlation
+               Annotations                   -- ^ after @cholesky_factor_corr@
+               Annotations                   -- ^ after @[@
+               Expr                          -- ^ dimensions
+               Annotations                   -- ^ after @]@
+             | CholeskyFactorCov             -- ^ cholesky factor covariance
+               Annotations                   -- ^ after @cholesky_factor_cov@
+               Annotations                   -- ^ after @[@
+               Expr                          -- ^ dimensions
+               (Maybe (Annotations, Expr))   -- ^ optional: annotations after
+                                             --   @,@ and second dimensions
+               Annotations                   -- ^ after @]@
+             | CorrMatrix                    -- ^ correlation matrix
+               Annotations                   -- ^ after @corr_matrix@
+               Annotations                   -- ^ after @[@
+               Expr                          -- ^ dimensions
+               Annotations                   -- ^ after @]@
+             | CovMatrix                     -- ^ covariance matrix
+               Annotations                   -- ^ after @cov_matrix@
+               Annotations                   -- ^ after @[@
+               Expr                          -- ^ dimensions
+               Annotations                   -- ^ after @]@
+             deriving (Eq, Show)
+
+
+-- | type synonym for constructors of `VarType` scalar types
+type ScalarVarType = Annotations -> Maybe VarConstraints -> VarType
+
+-- | type synonym for constructors of `VarType` vector types
+type VectorVarType = Annotations
+                      -> Maybe VarConstraints
+                      -> Annotations
+                      -> Expr
+                      -> Annotations
+                      -> VarType
+
+-- | type synonym for constructors of `VarType` vector types that must not
+--   have constraints
+type VectorNoConstrVarType = Annotations
+                              -> Annotations
+                              -> Expr
+                              -> Annotations
+                              -> VarType
+
+-- | type synonym for constructors of `VarType` matrix types
+type MatrixVarType = Annotations
+                      -> Maybe VarConstraints
+                      -> Annotations
+                      -> Expr
+                      -> Annotations
+                      -> Expr
+                      -> Annotations
+                      -> VarType
+
+-- | type synonym for constructors of `VarType` matrix types
+type MatrixOptDimsVarType = Annotations
+                             -> Annotations
+                             -> Expr
+                             -> Maybe (Annotations, Expr)
+                             -> Annotations
+                             -> VarType
+
+-- | set of variable constraints
+data VarConstraints = VarConstraints
+                      [VarConstraint]
+                      Annotations     -- ^ after the @>@ symbol
+                    deriving (Eq, Show)
+
+-- | single variable constraint
+data VarConstraint = Lower
+                     Annotations  -- ^ before @lower@ keyword
+                     Annotations  -- ^ after @lower@ keyword
+                     Annotations  -- ^ after @=@ symbol
+                     Expr       -- ^ lower bound
+                   | Upper
+                     Annotations  -- ^ before @upper@ keyword
+                     Annotations  -- ^ after @upper@ keyword
+                     Annotations  -- ^ after @=@ symbol
+                     Expr       -- ^ upper bound
+                   | Multiplier
+                     Annotations  -- ^ before @multiplier@ keyword
+                     Annotations  -- ^ after @multiplier@ keyword
+                     Annotations  -- ^ after @=@ symbol
+                     Expr  -- ^ multiplier
+                   | Offset
+                     Annotations  -- ^ before @offset@ keyword
+                     Annotations  -- ^ after @offset@ keyword
+                     Annotations  -- ^ after @=@ symbol
+                     Expr      -- ^ offset
+                   deriving (Eq, Show)
 
 
 -- | Annotations of source code (comments, linebreaks)
