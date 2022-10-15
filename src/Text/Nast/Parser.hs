@@ -103,10 +103,8 @@ signedInt = do plus <|> minus <|> nosign
 
 -- | String literal, e.g. @"abc"@
 stringLiteral :: Parser Expr
-stringLiteral = do _ <- char '"'
-                   s <- many $ noneOf "\n\""
-                   _ <- char '"'
-                   xs <- codeAnnotations
+stringLiteral = do s <- char '"' >> (many $ noneOf "\n\"")
+                   xs <- char '"' >> codeAnnotations
                    return $ StringLiteral s xs
 
 -- | Stan expression
@@ -115,9 +113,8 @@ expression = precedence10
 
 -- | List of printables. Used in @print@ and @reject@ statements.
 printables :: Parser Expr
-printables = do xs <- p `sepBy1` char ','
-                let (as, es) = unzip xs
-                return $ Printables es as
+printables = do (as, es) <- unzip <$> p `sepBy1` char ','
+                return $ uncurry Printables (es, as)
   where p = (,) <$> codeAnnotations <*> (stringLiteral <|> expression)
 
 {-|
@@ -135,11 +132,9 @@ precedence10 :: Parser Expr
 -- unnecessarily expensive if the precedence9 expression is complex.
 precedence10 = do l <- precedence9
                   p l <|> return l
-  where p l' = do _ <- char '?'
-                  xs <- codeAnnotations
+  where p l' = do xs <- char '?' >> codeAnnotations
                   m <- precedence9
-                  _ <- char ':'
-                  ys <- codeAnnotations
+                  ys <- char ':' >> codeAnnotations
                   r <- precedence10
                   return $ Conditional l' xs m ys r
 
@@ -150,8 +145,7 @@ Precedence level 9 expressions
 -}
 precedence9 :: Parser Expr
 precedence9 = chainl1 precedence8 $ p
-  where p = do _ <- string "||"
-               xs <- codeAnnotations
+  where p = do xs <- string "||" >> codeAnnotations
                return $ (\l r -> Or l xs r)
 
 {-|
@@ -161,8 +155,7 @@ Precedence level 8 expressions
 -}
 precedence8 :: Parser Expr
 precedence8 = chainl1 precedence7 $ p
-  where p = do _ <- string "&&"
-               xs <- codeAnnotations
+  where p = do xs <- string "&&" >> codeAnnotations
                return $ (\l r -> And l xs r)
 
 {-|
@@ -253,8 +246,7 @@ Precedence level 0 expressions
 precedence0 :: Parser Expr
 precedence0 = do e <- primary  -- Parse primary only once for efficiency
                  (t e) <|> (completeCall e) <|> (completeIndex e) <|> (return e)
-  where t e = do _ <- char '\''
-                 xs <- codeAnnotations
+  where t e = do xs <- char '\'' >> codeAnnotations
                  return $ Transpose e xs
 
 {-|
@@ -294,8 +286,7 @@ callLike :: Char                           -- ^ Left delimiter, @(@ or @[@
          -> Parser Expr
 callLike ld rd f p e = do _ <- char ld
                           (argAnns, args) <- (try withArgs) <|> withoutArgs
-                          _ <- char rd
-                          cs <- codeAnnotations
+                          cs <- char rd >> codeAnnotations
                           return $ f e args argAnns cs
   where -- first case: if there is at least one argument
         -- withArgs = do todo <- q `sepBy` (char ',')
@@ -321,9 +312,9 @@ range = do l <- optionMaybe $ try expression
            case (l, colon) of
              (Just e,  Nothing) -> return e
              (Nothing, Nothing) -> fail "Cannot parse range"
-             _ -> do cs <- codeAnnotations
-                     r <- optionMaybe $ try expression
-                     return $ Range l cs r
+             _                  -> do cs <- codeAnnotations
+                                      r <- optionMaybe $ try expression
+                                      return $ Range l cs r
 
 {-| Left-hand side expression
 
@@ -356,11 +347,9 @@ identifier = do x <- letter
                   else return $ Identifier (x:xs) ys
 
 parentheses :: Parser Expr
-parentheses = do _ <- char '('
-                 xs <- codeAnnotations
+parentheses = do xs <- char '(' >> codeAnnotations
                  e <- expression
-                 _ <- char ')'
-                 ys <- codeAnnotations
+                 ys <- char ')' >> codeAnnotations
                  return $ Parens xs e ys
 
 {-| Type synonym for binary operation on expressions (`Expr`). -}
@@ -442,14 +431,12 @@ comment =   try lineBased
 
 -- | @//* ... *//@ style comment
 bracketed :: Parser CodeAnnotation
-bracketed = do _ <- string "/*"
-               c <- manyTill anyChar (try $ string "*/")
+bracketed = do c <- string "/*" >> manyTill anyChar (try $ string "*/")
                return $ Bracketed c
 
 -- | @// ...@ style comment
 lineBased :: Parser CodeAnnotation
-lineBased = do _ <- string "//"
-               c <- manyTill (noneOf "\n") eol
+lineBased = do c <- string "//" >> manyTill (noneOf "\n") eol
                return $ LineBased c
 
 eol :: Parser ()
@@ -491,17 +478,14 @@ keyword k constr = do xs <- string k >> codeAnnotations
 
 -- | Parse block statement
 block :: Parser Stmt
-block = do _ <- char '{'
-           xs <- codeAnnotations
+block = do xs <- char '{' >> codeAnnotations
            stmts <- many statement
-           _ <- char '}'
-           ys <- codeAnnotations
+           ys <- char '}' >> codeAnnotations
            return $ Block xs stmts ys
 
 -- | Parse if then (else) statements
 ifElse :: Parser Stmt
-ifElse = do _ <- string "if"
-            xs <- codeAnnotations
+ifElse = do xs <- string "if" >> codeAnnotations
             cond <- parentheses
             stmt <- statement
             elseAnn <- optionMaybe $ try $ string "else" >> codeAnnotations
