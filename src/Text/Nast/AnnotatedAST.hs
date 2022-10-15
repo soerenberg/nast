@@ -141,6 +141,7 @@ data Stmt = Break             -- ^ @break@ statement
             Annotations       -- ^ succeeding the @;@ symbol
           | Return            -- ^ @return@ statement
             Annotations       -- ^ succeeding the @return@ keyword
+            (Maybe Expr)      -- ^ optional expression to be returned
             Annotations       -- ^ succeeding the @;@ symbol
           | Block             -- ^ Block statement (@{..}@)
             Annotations       -- ^ succeeding the opening @{@

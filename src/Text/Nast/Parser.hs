@@ -414,7 +414,7 @@ whitespace1 = many1 $ oneOf " \t"
 statement :: Parser Stmt
 statement =   (try $ keyword "break" Break)
           <|> (try $ keyword "continue" Continue)
-          <|> (try $ keyword "return" Return)
+          <|> try returnStmt
           <|> try printStmt
           <|> try reject
           <|> block
@@ -513,6 +513,13 @@ tilde = do l <- expression
            r <- completeCall i
            ys <- char ';' >> codeAnnotations
            return $ Tilde l xs r ys
+
+{-| Return statement -}
+returnStmt :: Parser Stmt
+returnStmt = do xs <- string "return" >> codeAnnotations
+                e <- optionMaybe $ try expression
+                ys <- char ';' >> codeAnnotations
+                return $ Return xs e ys
 
 {-| Print statement -}
 printStmt :: Parser Stmt

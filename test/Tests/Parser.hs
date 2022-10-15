@@ -425,33 +425,39 @@ tests =
     ]
   , testGroup "return"
     [ testCase "return;" $ parse statement "" "return;" @?=
-      (Right $ Return [] [])
-    , testCase "return/*A/*; /*B*/" $
+      (Right $ Return [] Nothing [])
+    , testCase "return/*A*/; /*B*/" $
       parse statement "" "return/*A*/;/*B*/" @?=
-      (Right $ Return [Bracketed "A"] [Bracketed "B"])
+      (Right $ Return [Bracketed "A"] Nothing [Bracketed "B"])
+    , testCase "return a;" $ parse statement "" "return a;" @?=
+      (Right $ Return [] (Just id_a) [])
+    , testCase "return/*A/*a;/*B*/" $
+      parse statement "" "return/*A*/a;/*B*/" @?=
+      (Right $ Return [Bracketed "A"] (Just id_a) [Bracketed "B"])
     ]
   , testGroup "block"
     [ testCase "{}" $ parse statement "" "{}" @?=
       (Right $ Block [] [] [])
     , testCase "{return; continue; }" $
       parse statement "" "{return; continue; }" @?=
-      (Right $ Block [] [Return [] [], Continue [] []] [])
+      (Right $ Block [] [Return [] Nothing [], Continue [] []] [])
     , testCase "{/*A*/return; } /*B*/" $
       parse statement "" "{/*A*/return; } /*B*/" @?=
-      (Right $ Block [Bracketed "A"] [Return [] []]
+      (Right $ Block [Bracketed "A"] [Return [] Nothing []]
                      [Bracketed "B"])
     ]
 {- ----STATEMENTS---- -}
   , testGroup "if/else"
     [ testCase "if (a) return;" $ parse statement "" "if (a) return;"
-      @?= (Right $ If [] (Parens [] id_a []) (Return [] []))
+      @?= (Right $ If [] (Parens [] id_a []) (Return [] Nothing []))
     , testCase "if (a) return; else {}" $
       parse statement "" "if (a) return; else {}"
-      @?= (Right $ IfElse [] (Parens [] id_a []) (Return [] []) []
+      @?= (Right $ IfElse [] (Parens [] id_a []) (Return [] Nothing []) []
                           (Block [] [] []))
     , testCase "if/*A*/(a) return; else/*B*/{}" $
       parse statement "" "if/*A*/(a) return; else/*B*/{}"
-      @?= (Right $ IfElse [Bracketed "A"] (Parens [] id_a []) (Return [] [])
+      @?= (Right $ IfElse [Bracketed "A"] (Parens [] id_a [])
+                          (Return [] Nothing [])
                           [Bracketed "B"] (Block [] [] []))
     ]
   , testGroup "assignments"
@@ -531,27 +537,27 @@ tests =
   , testGroup "for loop"
     [ testCase "for (x in a) return;" $
       parse statement "" "for (x in a) return;" @?=
-      (Right $ For [] [] id_x [] id_a [] (Return [] []))
+      (Right $ For [] [] id_x [] id_a [] (Return [] Nothing []))
     , testCase "annotated For" $
       parse statement "" "for/*A*/(/*B*/x in/*C*/ a)/*D*/ return;" @?=
       (Right $ For [Bracketed "A"] [Bracketed "B"] id_x [Bracketed "C"] id_a
-                   [Bracketed "D"]  (Return [] []))
+                   [Bracketed "D"]  (Return [] Nothing []))
     , testCase "for (x in 1:3) return;" $
       parse statement "" "for (x in 1:3) return;" @?=
-      (Right $ ForRange [] [] id_x [] lit_1 [] lit_3 [] (Return [] []))
+      (Right $ ForRange [] [] id_x [] lit_1 [] lit_3 [] (Return [] Nothing []))
     , testCase "annotated ForRange" $
       parse statement "" "for/*A*/(/*B*/x in/*C*/ a:/*D*/b)/*E*/ return;" @?=
       (Right $ ForRange [Bracketed "A"] [Bracketed "B"] id_x [Bracketed "C"]
                         id_a [Bracketed "D"] id_b [Bracketed "E"]
-                        (Return [] []))
+                        (Return [] Nothing []))
     ]
   , testGroup "while loop"
     [ testCase "while (a) return;" $ parse statement "" "while (a) return;" @?=
-      (Right $ While [] [] id_a [] (Return [] []))
+      (Right $ While [] [] id_a [] (Return [] Nothing []))
     , testCase "while/*A*/(a) return;" $
       parse statement "" "while/*A*/(/*B*/a)/*C*/ return;"
       @?= (Right $ While [Bracketed "A"] [Bracketed "B"] id_a [Bracketed "C"]
-                         (Return [] []))
+                         (Return [] Nothing []))
     ]
   , testGroup "tilde stmt"
     [ testCase "a+1 ~ x(p,q);" $ parse statement "" "a+1 ~ x(p, q);" @?=
