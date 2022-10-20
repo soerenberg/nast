@@ -26,7 +26,7 @@ import Text.Nast.Parser
   , varType
   )
 
-import Text.ParserCombinators.Parsec (parse)
+import Text.ParserCombinators.Parsec (Parser, parse)
 
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (assertBool, testCase, (@?=))
@@ -34,6 +34,12 @@ import Test.Tasty.HUnit (assertBool, testCase, (@?=))
 import Data.Either (isLeft)
 
 
+
+expectParseFail :: Parser a  -- ^ parser to use
+                -> String    -- ^ test case name
+                -> String    -- ^ source to parse
+                -> TestTree
+expectParseFail p t s = testCase t $ assertBool "" $ isLeft $ parse p "" s
 
 tests :: [TestTree]
 tests =
@@ -222,7 +228,7 @@ tests =
           (Right $ Index id_x [lit_3] [[]] [])
       , testCase "x[2,1]" $ parse lhs "" "x[3,1]" @?=
           (Right $ Index id_x [lit_3, lit_1] [[], []] [])
-      , testCase "'-b' fails" $ assertBool "" (isLeft $ parse lhs "" "-b")
+      , expectParseFail lhs "'-b' fails" "-b"
       ]
   , testGroup "numeric literal"
       [ testCase "23" $ parse numLiteral "" "23" @?=
@@ -249,8 +255,7 @@ tests =
         (Right $ StringLiteral "" [])
       , testCase "'abc'" $ parse stringLiteral "" "\"abc\"" @?=
         (Right $ StringLiteral "abc" [])
-      , testCase "'a\\na' fails" $
-        assertBool "" (isLeft $ parse stringLiteral "" "\"a\na\"")
+      , expectParseFail stringLiteral "'a\\na' fails" "\"a\na\""
       ]
   , testGroup "parentheses"
     [ testCase "(3)" $ parse expression "" "(3)" @?=
@@ -270,10 +275,10 @@ tests =
         (Right $ Identifier "xyz" [])
     , testCase "xyZz12" $ parse expression "" "xyZz12" @?=
         (Right $ Identifier "xyZz12" [])
-    , testCase "fail 1" $ assertBool "" (isLeft $ parse identifier "" "1")
-    , testCase "fail 12ab" $ assertBool "" (isLeft $ parse identifier "" "12ab")
-    , testCase "fail _xy" $ assertBool "" (isLeft $ parse identifier "" "_xy")
-    , testCase "fail ab__" $ assertBool "" (isLeft $ parse identifier "" "ab__")
+    , expectParseFail identifier "fail i)" "1"
+    , expectParseFail identifier "fail ii)" "12ab"
+    , expectParseFail identifier "fail iii)" "_xy"
+    , expectParseFail identifier "fail iv)" "ab__"
     ]
   , testGroup "Precedence 0"
     [ testCase "abc()" $ parse expression "" "abc()" @?=
@@ -404,8 +409,7 @@ tests =
         (Right [Bracketed " a\nb*c", Newline, LineBased "xy", LineBased "pq"])
     , testCase "\\n" $ parse codeAnnotations1 "" "\n" @?= Right [Newline]
     , testCase "' '" $ parse codeAnnotations1 "" " " @?= Right []
-    , testCase "'' fails" $ assertBool ""
-        (isLeft $ parse codeAnnotations1 "" "")
+    , expectParseFail codeAnnotations1 "'' fails" ""
     ]
   , testGroup "annotated"
     [ testCase "numLiteral 1 comment" $ parse numLiteral "" "1//abc" @?=
@@ -594,8 +598,7 @@ tests =
       parse statement "" "print/*A*/(a,1)/*B*/;/*C*/" @?=
       (Right $ Print [Bracketed "A"] (Printables [id_a, lit_1] [[], []])
                      [Bracketed "B"] [Bracketed "C"])
-    , testCase "print(); fails" $ assertBool ""
-      (isLeft $ parse statement "" "print();")
+    , expectParseFail statement "print(); fails" "print();"
     ]
   , testGroup "reject"
     [ testCase "reject(a,1);" $ parse statement "" "reject(a,1);" @?=
@@ -604,8 +607,7 @@ tests =
       parse statement "" "reject/*A*/(a,1)/*B*/;/*C*/" @?=
       (Right $ Reject [Bracketed "A"] (Printables [id_a, lit_1] [[], []])
                       [Bracketed "B"] [Bracketed "C"])
-    , testCase "reject(); fails" $ assertBool ""
-      (isLeft $ parse statement "" "reject();")
+    , expectParseFail statement "reject(); fails" "reject();"
     ]
   , testGroup "empty stmt"
     [ testCase ";" $ parse statement "" ";" @?= (Right $ Empty [])
@@ -699,13 +701,9 @@ tests =
                            (Just $ ([], id_q)) []) id_x [])
     ]
   , testGroup "top var declarations fail"
-    [ testCase "i)" $ assertBool "i)"
-      (isLeft $ parse (varDeclaration False True) "" "int<lower=0> i;")
-    , testCase "ii)" $ assertBool "ii)"
-      (isLeft $ parse (varDeclaration True False) "" "int<lower=0> i = 0;")
-    , testCase "v)" $ assertBool "v)"
-      (isLeft $ parse (varDeclaration True True) ""
-      "real<> i;")
+    [ expectParseFail (varDeclaration False True) "i)" "int<lower=0> i;"
+    , expectParseFail (varDeclaration True False) "i)" "int<lower=0> i = 0;"
+    , expectParseFail (varDeclaration True True) "i)" "real<> i;"
     ]
   ]
 
