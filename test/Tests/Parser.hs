@@ -8,6 +8,7 @@ import Text.Nast.AnnotatedAST
   , VarType (..)
   , VarConstraints (..)
   , VarConstraint (..)
+  , ArrayDims (..)
   )
 
 import Text.Nast.Parser
@@ -517,27 +518,31 @@ tests =
     ]
   , testGroup "top var declarations"
     [ testParser (varDeclaration True True) "int x = a;" $
-        VarDeclAssign (Int [] Nothing) id_x  [] id_a []
+        VarDeclAssign (Int [] Nothing) id_x Nothing [] id_a []
     , testParser (varDeclaration True True) "real x = 1;" $
-        VarDeclAssign (Real [] Nothing) id_x [] lit_1 []
+        VarDeclAssign (Real [] Nothing) id_x Nothing [] lit_1 []
     , testParser (varDeclaration True True) "real x;" $
-        VarDecl (Real [] Nothing) id_x []
+        VarDecl (Real [] Nothing) id_x Nothing []
+    , testParser (varDeclaration True True) "complex x[2, 3];" $
+        VarDecl (Complex [] Nothing) id_x
+                (Just $ ArrayDims [([], lit_2), ([], lit_3)] []) []
     , testParserMsg (varDeclaration True True) "annotated vec"
         "vector/*A*/[/*B*/3]/*C*/ x =/*D*/2;/*E*/" $
         VarDeclAssign (Vector [Bracketed "A"] Nothing [Bracketed "B"] lit_3
                         [Bracketed "C"])
-                      id_x [Bracketed "D"] lit_2 [Bracketed "E"]
+                      id_x Nothing [Bracketed "D"] lit_2 [Bracketed "E"]
     , testParserMsg (varDeclaration True True) "annotated mat"
         "matrix/*A*/[/*B*/3,/*C*/1]/*D*/ x =/*E*/2;/*F*/" $
         VarDeclAssign (Matrix [Bracketed "A"] Nothing [Bracketed "B"] lit_3
                               [Bracketed "C"] lit_1 [Bracketed "D"])
-                    id_x [Bracketed "E"] lit_2 [Bracketed "F"]
+                    id_x Nothing [Bracketed "E"] lit_2 [Bracketed "F"]
     , testParserMsg (varDeclaration True True) "cholesky_factor_mat"
         "cholesky_factor_cov[p] x;" $
-        VarDecl (CholeskyFactorCov [] [] id_p Nothing []) id_x []
+        VarDecl (CholeskyFactorCov [] [] id_p Nothing []) id_x Nothing []
     , testParserMsg (varDeclaration True True) "cholesky_factor_mat'"
         "cholesky_factor_cov[p,q] x;" $
-        VarDecl (CholeskyFactorCov [] [] id_p (Just $ ([], id_q)) []) id_x []
+        VarDecl (CholeskyFactorCov [] [] id_p (Just $ ([], id_q)) []) id_x
+                Nothing []
     ]
   , testGroup "top var declarations fail"
     [ assertParseFail (varDeclaration False True) "i)" "int<lower=0> i;"

@@ -12,6 +12,7 @@ module Text.Nast.AnnotatedAST
  , MatrixOptDimsVarType
  , VarConstraints (..)
  , VarConstraint (..)
+ , ArrayDims (..)
  ) where
 
 
@@ -262,16 +263,18 @@ data Stmt = Break             -- ^ @break@ statement
 
 
 -- | top var decleration
-data VarDecl = VarDecl        -- ^ declaration without assignment
-               VarType        -- ^ type
-               Expr              -- ^ identifier
-               Annotations       -- ^ after @;@ symbol
-             | VarDeclAssign  -- ^ declaration with assignment
-               VarType        -- ^ type
-               Expr              -- ^ identifier
-               Annotations       -- ^ after @=@ symbol
-               Expr              -- ^ right-hand side of assignment
-               Annotations       -- ^ after @;@ symbol
+data VarDecl = VarDecl            -- ^ declaration without assignment
+               VarType            -- ^ type
+               Expr               -- ^ identifier
+               (Maybe ArrayDims)  -- ^ optional array dimensions
+               Annotations        -- ^ after @;@ symbol
+             | VarDeclAssign      -- ^ declaration with assignment
+               VarType            -- ^ type
+               Expr               -- ^ identifier
+               (Maybe ArrayDims)  -- ^ optional array dimensions
+               Annotations        -- ^ after @=@ symbol
+               Expr               -- ^ right-hand side of assignment
+               Annotations        -- ^ after @;@ symbol
              deriving (Eq, Show)
 
 -- | top var type
@@ -434,6 +437,13 @@ data VarConstraint = Lower
                      Annotations  -- ^ after @=@ symbol
                      Expr      -- ^ offset
                    deriving (Eq, Show)
+
+
+-- | Array dimensions
+data ArrayDims = ArrayDims
+                 [(Annotations, Expr)]  -- ^ annotations and dimensions
+                 Annotations            -- ^ annotations after @]@
+               deriving (Eq, Show)
 
 
 -- | Annotations of source code (comments, linebreaks)

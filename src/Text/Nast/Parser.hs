@@ -63,6 +63,7 @@ module Text.Nast.Parser (
   , vectorVarType
   , matrixVarType
   , matrixOptDimsVarType
+  , arrayDims
   ) where
 
 
@@ -107,6 +108,7 @@ import Text.Nast.AnnotatedAST
   , MatrixOptDimsVarType
   , VarConstraints (..)
   , VarConstraint (..)
+  , ArrayDims (..)
   )
 
 
@@ -600,14 +602,15 @@ varDeclaration :: AllowVarConstraints  -- ^ allow var constraints
 varDeclaration allowConstraints allowAssignment =
   do t <- varType allowConstraints
      i <- identifier
+     dims <- optionMaybe $ try arrayDims
      if allowAssignment
        then do optAssign <- try $ optionMaybe assign
                ys <- char ';' >> codeAnnotations
                case optAssign of
-                 (Just (xs, rhs)) -> return $ VarDeclAssign t i xs rhs ys
-                 _ -> return $ VarDecl t i ys
+                 (Just (xs, rhs)) -> return $ VarDeclAssign t i dims xs rhs ys
+                 _ -> return $ VarDecl t i dims ys
        else do ys <- char ';' >> codeAnnotations
-               return $ VarDecl t i ys
+               return $ VarDecl t i dims ys
   where assign =  do xs <- char '=' >> codeAnnotations
                      rhs <- expression
                      return (xs, rhs)
@@ -721,3 +724,11 @@ matrixOptDimsVarType s f = do xs <- string s >> codeAnnotations
                                           <*> expression
                               zs <- char ']' >> codeAnnotations
                               return $ f xs ys d1 ad2 zs
+
+-- | array dimensions
+arrayDims :: Parser ArrayDims
+arrayDims = do _ <- char '['
+               ds <- p `sepBy` (char ',')
+               xs <- char ']' >> codeAnnotations
+               return $ ArrayDims ds xs
+  where p = (,) <$> codeAnnotations <*> expression
