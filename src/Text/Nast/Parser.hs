@@ -99,7 +99,6 @@ import Text.Nast.AnnotatedAST
   , Stmt (..)
   , Annotations
   , CodeAnnotation (..)
-  , VarDecl (..)
   , VarType (..)
   , ScalarVarType
   , VectorVarType
@@ -598,7 +597,7 @@ type AllowAssignment = Bool
 -- | top var declaration
 varDeclaration :: AllowVarConstraints  -- ^ allow var constraints
                   -> AllowAssignment      -- ^ allow initial assignments
-                  -> Parser VarDecl
+                  -> Parser Stmt
 varDeclaration allowConstraints allowAssignment =
   do t <- varType allowConstraints
      i <- identifier

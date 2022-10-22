@@ -3,7 +3,6 @@ module Text.Nast.AnnotatedAST
  , Stmt (..)
  , CodeAnnotation (..)
  , Annotations
- , VarDecl (..)
  , VarType (..)
  , ScalarVarType
  , VectorVarType
@@ -259,23 +258,19 @@ data Stmt = Break             -- ^ @break@ statement
             Annotations       -- ^ succeeding the @;@
           | Empty             -- ^ empty statement, i.e. @;@
             Annotations       -- ^ succeeding the @;@ symbol
+          | VarDecl            -- ^ declaration without assignment
+            VarType            -- ^ type
+            Expr               -- ^ identifier
+            (Maybe ArrayDims)  -- ^ optional array dimensions
+            Annotations        -- ^ after @;@ symbol
+          | VarDeclAssign      -- ^ declaration with assignment
+            VarType            -- ^ type
+            Expr               -- ^ identifier
+            (Maybe ArrayDims)  -- ^ optional array dimensions
+            Annotations        -- ^ after @=@ symbol
+            Expr               -- ^ right-hand side of assignment
+            Annotations        -- ^ after @;@ symbol
           deriving (Eq, Show)
-
-
--- | top var decleration
-data VarDecl = VarDecl            -- ^ declaration without assignment
-               VarType            -- ^ type
-               Expr               -- ^ identifier
-               (Maybe ArrayDims)  -- ^ optional array dimensions
-               Annotations        -- ^ after @;@ symbol
-             | VarDeclAssign      -- ^ declaration with assignment
-               VarType            -- ^ type
-               Expr               -- ^ identifier
-               (Maybe ArrayDims)  -- ^ optional array dimensions
-               Annotations        -- ^ after @=@ symbol
-               Expr               -- ^ right-hand side of assignment
-               Annotations        -- ^ after @;@ symbol
-             deriving (Eq, Show)
 
 -- | top var type
 data VarType = Int                           -- ^ integer

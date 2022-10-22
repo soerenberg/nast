@@ -4,7 +4,6 @@ import Text.Nast.AnnotatedAST
   ( Expr (..)
   , Stmt (..)
   , CodeAnnotation (..)
-  , VarDecl (..)
   , VarType (..)
   , VarConstraints (..)
   , VarConstraint (..)
