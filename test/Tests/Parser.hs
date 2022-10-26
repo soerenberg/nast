@@ -1,7 +1,8 @@
 module Tests.Parser (tests) where
 
 import Text.Nast.AnnotatedAST
-  ( Expr (..)
+  ( StanProgram (..)
+  , Expr (..)
   , Stmt (..)
   , CodeAnnotation (..)
   , VarType (..)

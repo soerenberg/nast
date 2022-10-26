@@ -1,6 +1,8 @@
 module Text.Nast.Parser (
+  -- * stan program
+    stanProgram
   -- * literals
-    numLiteral
+  , numLiteral
   , signedInt
   , stringLiteral
   -- * expressions
@@ -95,7 +97,9 @@ import Control.Monad (void)
 import Data.Maybe (maybeToList)
 
 import Text.Nast.AnnotatedAST
-  ( Expr (..)
+  ( StanProgram (..)
+  , ProgramBlock (..)
+  , Expr (..)
   , Stmt (..)
   , Annotations
   , CodeAnnotation (..)
@@ -109,6 +113,46 @@ import Text.Nast.AnnotatedAST
   , VarConstraint (..)
   , ArrayDims (..)
   )
+
+
+-- | Stan program
+stanProgram :: Parser StanProgram
+stanProgram =
+  do h   <- codeAnnotations
+     let fb = Nothing  -- TODO not implemented
+     db  <- optionMaybe $ try $ programBlock "data"                   True False False
+     tdb <- optionMaybe $ try $ programBlock "transformed data"       True True True
+     pb  <- optionMaybe $ try $ programBlock "parameters"             True False False
+     tpb <- optionMaybe $ try $ programBlock "transformed parameters" True True True
+     mb  <- optionMaybe $ try $ programBlock "model"                  False True True
+     gqb <- optionMaybe $ try $ programBlock "generated quantities"   True True True
+     return $ StanProgram h fb db tdb pb tpb mb gqb
+
+-- | allow variable constraints in declaration
+type AllowVarConstraints = Bool
+
+-- | allow initial assignment in the right-hand side of declaration
+type AllowAssignment = Bool
+
+-- | allow statements other than variable declarations
+type AllowStatements = Bool
+
+-- | Stan program block
+programBlock :: String               -- ^ block name
+             -> AllowVarConstraints  -- ^ allow var constraints
+             -> AllowAssignment      -- ^ allow initial assignments
+             -> AllowStatements      -- ^ allow non-declaration statements
+             -> Parser ProgramBlock
+programBlock name allowConstr allowAssign allowStmts =
+  do xs <- string name >> codeAnnotations
+     ys <- char '{' >> codeAnnotations
+     stmts <- many stmt
+     zs <- char '}' >> codeAnnotations
+     return $ ProgramBlock xs ys stmts zs
+  where stmt = if allowStmts
+                 then try declarations <|> statement
+                 else declarations
+        declarations = varDeclaration allowConstr allowAssign
 
 
 -- | Stan numeric literal
@@ -587,12 +631,6 @@ incrementLogProb = do xs <- string "increment_log_prob" >> codeAnnotations
 
 emptyStmt :: Parser Stmt
 emptyStmt = char ';' >> codeAnnotations >>= return . Empty
-
--- | allow variable constraints in declaration
-type AllowVarConstraints = Bool
-
--- | allow initial assignment in the right-hand side of declaration
-type AllowAssignment = Bool
 
 -- | top var declaration
 varDeclaration :: AllowVarConstraints  -- ^ allow var constraints

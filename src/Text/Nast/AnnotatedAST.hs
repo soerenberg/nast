@@ -1,5 +1,7 @@
 module Text.Nast.AnnotatedAST
- ( Expr (..)
+ ( StanProgram (..)
+ , ProgramBlock (..)
+ , Expr (..)
  , Stmt (..)
  , CodeAnnotation (..)
  , Annotations
@@ -13,6 +15,28 @@ module Text.Nast.AnnotatedAST
  , VarConstraint (..)
  , ArrayDims (..)
  ) where
+
+
+-- | Stan program structure
+data StanProgram = StanProgram
+  { header                       :: Annotations
+  , function_block               :: Maybe ProgramBlock
+  , data_block                   :: Maybe ProgramBlock
+  , transformed_data_block       :: Maybe ProgramBlock
+  , parameters_block             :: Maybe ProgramBlock
+  , transformed_parameters_block :: Maybe ProgramBlock
+  , model_block                  :: Maybe ProgramBlock
+  , generated_quantities_block   :: Maybe ProgramBlock
+  } deriving (Eq, Show)
+
+
+-- | Program block
+data ProgramBlock = ProgramBlock
+                    Annotations    -- ^ succeeding block name
+                    Annotations    -- ^ succeeding @{@
+                    [Stmt]         -- ^ statements
+                    Annotations    -- ^ succeeding @}@
+                  deriving (Eq, Show)
 
 
 -- | Expression AST nodes with code annotations

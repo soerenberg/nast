@@ -44,6 +44,9 @@ test-suite nast-test
   type: exitcode-stdio-1.0
   main-is: test-nast.hs
   other-modules:
+      IntegrationTests.AnnotatedEmpty
+      IntegrationTests.Empty
+      IntegrationTests.Schools
       Tests.Parser
       Paths_nast
   hs-source-dirs:
