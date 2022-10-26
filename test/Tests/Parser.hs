@@ -1,8 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Tests.Parser (tests) where
 
 import Text.Nast.AnnotatedAST
-  ( StanProgram (..)
-  , Expr (..)
+  ( Expr (..)
   , Stmt (..)
   , CodeAnnotation (..)
   , VarType (..)
@@ -27,46 +27,48 @@ import Text.Nast.Parser
   , varType
   )
 
-import Text.ParserCombinators.Parsec (Parser, parse)
+import Text.Parsec (parse)
+import Text.Parsec.Text (Parser)
 
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (assertBool, testCase, (@?=))
 
 import Data.Either (isLeft)
+import Data.Text (Text, unpack)
 
 
 -- | Assert that a parse fails (returns Left)
 assertParseFail :: Parser a  -- ^ parser to use
                 -> String    -- ^ test case name
-                -> String    -- ^ source to parse
+                -> Text      -- ^ source to parse
                 -> TestTree
 assertParseFail p t s = testCase t $ assertBool "" $ isLeft $ parse p "" s
 
 -- | Test parser with test case name
 testParserMsg :: (Show a, Eq a) => Parser a  -- ^ parser to test
                                 -> String    -- ^ test case name
-                                -> String    -- ^ source to parse
+                                -> Text      -- ^ source to parse
                                 -> a         -- ^ expected value
                                 -> TestTree
 testParserMsg p t s e = testCase t $ parse p "" s @?= (Right $ e)
 
 -- | Test parser with test case name equal to source
 testParser:: (Show a, Eq a) => Parser a  -- ^ parser to test
-                            -> String    -- ^ source to parse
+                            -> Text      -- ^ source to parse
                             -> a         -- ^ expected value
                             -> TestTree
-testParser p s = testParserMsg p s s
+testParser p s = testParserMsg p (unpack s) s
 
-testExprMsg :: String -> String -> Expr -> TestTree
+testExprMsg :: String -> Text -> Expr -> TestTree
 testExprMsg = testParserMsg expression
 
-testExpr :: String -> Expr -> TestTree
+testExpr :: Text -> Expr -> TestTree
 testExpr = testParser expression
 
-testStmtMsg :: String -> String -> Stmt -> TestTree
+testStmtMsg :: String -> Text -> Stmt -> TestTree
 testStmtMsg = testParserMsg statement
 
-testStmt :: String -> Stmt -> TestTree
+testStmt :: Text -> Stmt -> TestTree
 testStmt = testParser statement
 
 tests :: [TestTree]

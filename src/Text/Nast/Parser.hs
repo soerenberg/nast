@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Text.Nast.Parser (
   -- * stan program
     stanProgram
@@ -69,8 +70,9 @@ module Text.Nast.Parser (
   ) where
 
 
-import Text.ParserCombinators.Parsec
-  ( Parser
+import Text.Parsec.Text (Parser)
+import Text.Parsec
+  ( (<|>)
   , (<|>)
   , (<?>)
   , anyChar

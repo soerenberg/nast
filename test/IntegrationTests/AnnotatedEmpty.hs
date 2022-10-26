@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module IntegrationTests.AnnotatedEmpty (tests) where
 
 import Text.Nast.AnnotatedAST
@@ -8,11 +9,12 @@ import Text.Nast.AnnotatedAST
 
 import Text.Nast.Parser (stanProgram)
 
-import Text.ParserCombinators.Parsec (parse)
+import Text.Parsec (parse)
 
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=))
 
+import Data.Text (Text, pack)
 import System.IO.Unsafe (unsafePerformIO)
 
 
@@ -55,8 +57,9 @@ expected = StanProgram
                             " after generated quantities }"
   }
 
-source :: String
-source = unsafePerformIO $ readFile "test/IntegrationTests/AnnotatedEmpty.stan"
+source :: Text
+source = pack $ unsafePerformIO $
+           readFile "test/IntegrationTests/AnnotatedEmpty.stan"
 
 tests :: [TestTree]
 tests =

@@ -38,6 +38,7 @@ library
       base >=4.7 && <5
     , containers
     , parsec
+    , text
   default-language: Haskell2010
 
 test-suite nast-test
@@ -59,4 +60,5 @@ test-suite nast-test
     , parsec
     , tasty
     , tasty-hunit
+    , text
   default-language: Haskell2010

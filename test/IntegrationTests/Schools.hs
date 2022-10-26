@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module IntegrationTests.Schools (tests) where
 
 import Text.Nast.AnnotatedAST
@@ -14,11 +15,12 @@ import Text.Nast.AnnotatedAST
 
 import Text.Nast.Parser (stanProgram)
 
-import Text.ParserCombinators.Parsec (parse)
+import Text.Parsec (parse)
 
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase, (@?=))
 
+import Data.Text (Text, pack)
 import System.IO.Unsafe (unsafePerformIO)
 
 
@@ -29,8 +31,8 @@ tests =
     @?= (Right $ expected)
   ]
 
-source :: String
-source = unsafePerformIO $ readFile "test/IntegrationTests/Schools.stan"
+source :: Text
+source = pack $ unsafePerformIO $ readFile "test/IntegrationTests/Schools.stan"
 
 expected :: StanProgram
 expected = StanProgram
