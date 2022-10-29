@@ -110,6 +110,7 @@ stanProgram =
      tpb <- optionMaybe $ try $ programBlock "transformed parameters" True True True
      mb  <- optionMaybe $ try $ programBlock "model"                  False True True
      gqb <- optionMaybe $ try $ programBlock "generated quantities"   True True True
+     _ <- eol
      return $ StanProgram h fb db tdb pb tpb mb gqb
 
 -- | allow variable constraints in declaration
