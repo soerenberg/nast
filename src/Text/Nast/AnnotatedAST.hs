@@ -3,6 +3,7 @@ module Text.Nast.AnnotatedAST
  , ProgramBlock (..)
  , Expr (..)
  , Stmt (..)
+ , BinaryOperator (..)
  , CodeAnnotation (..)
  , Annotations
  , VarType (..)
@@ -46,70 +47,11 @@ data Expr = Conditional       -- ^ Ternary @?:@ conditional
             Expr              -- ^ Mid expression (after @?@, before @:@)
             Annotations       -- ^ succeeding @:@ symbol
             Expr              -- ^ Right-hand side (after @:@)
-          | Or                -- ^ Logical "or" disjunction (@!!@)
+          | Binary            -- ^ Binary operation
             Expr              -- ^ Left-hand side
-            Annotations       -- ^ succeeding @||@ token
+            BinaryOperator    -- ^ binary operator
+            Annotations       -- ^ succeeding the binary operator token
             Expr              -- ^ Right-hand side
-          | And               -- ^ Logical "and" conjunction (@&&@)
-            Expr              -- ^ Left-hand side
-            Annotations       -- ^ succeeding @&&@ token
-            Expr              -- ^ Right-hand side
-          | Equal             -- ^ Equal comparison (@==@)
-            Expr              -- ^ Left-hand side
-            Annotations       -- ^ succeeding @==@ token
-            Expr              -- ^ Right-hand side
-          | NotEqual          -- ^ Not-equal comparison (@!=@)
-            Expr              -- ^ Left-hand side
-            Annotations       -- ^ succeeding @!=@ token
-            Expr              -- ^ Right-hand side
-          | Gt                -- ^ Greater than (@>@)
-            Expr              -- ^ Left-hand side
-            Annotations       -- ^ succeeding @>@ token
-            Expr              -- ^ Right-hand side
-          | Geq               -- ^ Greater or equal than (@>=@)
-            Expr              -- ^ Left-hand side
-            Annotations       -- ^ succeeding @>=@ token
-            Expr              -- ^ Right-hand side
-          | Lt                -- ^ Less than (@<@)
-            Expr              -- ^ Left-hand side
-            Annotations       -- ^ succeeding @<@ token
-            Expr              -- ^ Right-hand side
-          | Leq               -- ^ Less or equal than (@<=@)
-            Expr              -- ^ Left-hand side
-            Annotations       -- ^ succeeding @<=@ token
-            Expr              -- ^ Right-hand side
-          | Add               -- ^ Addition (@+@)
-            Expr              -- ^ left summand
-            Annotations       -- ^ succeeding @+@ token
-            Expr              -- ^ right summand
-          | Sub               -- ^ Subtraction (@-@)
-            Expr              -- ^ left summand
-            Annotations       -- ^ succeeding @-@ token
-            Expr              -- ^ right summand
-          | Mul               -- ^ Multiplication (@*@)
-            Expr              -- ^ left factor
-            Annotations       -- ^ succeeding @*@ token
-            Expr              -- ^ right factor
-          | Div               -- ^ Division (@/@)
-            Expr              -- ^ left factor
-            Annotations       -- ^ succeeding @/@ token
-            Expr              -- ^ right factor
-          | EltMul            -- ^ Element-wise multiplication (@.*@)
-            Expr              -- ^ left factor
-            Annotations       -- ^ succeeding @.*@ token
-            Expr              -- ^ right factor
-          | EltDiv            -- ^ Element-wise division (@./@)
-            Expr              -- ^ left factor
-            Annotations       -- ^ succeeding @./@ token
-            Expr              -- ^ right factor
-          | LDiv              -- ^ Left-division (@\\@)
-            Expr              -- ^ left factor
-            Annotations       -- ^ succeeding @\\@ token
-            Expr              -- ^ right factor
-          | IntDiv            -- ^ Integer division (@%\\%@)
-            Expr              -- ^ left factor
-            Annotations       -- ^ succeeding @%\\%@ token
-            Expr              -- ^ right factor
           | LogicalNeg        -- ^ Logical negation (@!@)
             Annotations       -- ^ succeeding @!@ token
             Expr              -- ^ Right-hand side
@@ -119,14 +61,6 @@ data Expr = Conditional       -- ^ Ternary @?:@ conditional
           | UnaryMinus        -- ^ Arithmetic negation (prefix @-@)
             Annotations       -- ^ succeeding @-@ token
             Expr              -- ^ Right-hand side
-          | Pow               -- ^ Exponentiation (@^@)
-            Expr              -- ^ base
-            Annotations       -- ^ succeeding @^@ token
-            Expr              -- ^ exponent
-          | EltPow            -- ^ Element-wise exponentiation (@.^@)
-            Expr              -- ^ base
-            Annotations       -- ^ succeeding @.^@ token
-            Expr              -- ^ exponent
           | Transpose         -- ^ Matrix transposition
             Expr              -- ^ expression to be transposed
             Annotations       -- ^ succeeding @'@ token
@@ -295,6 +229,29 @@ data Stmt = Break             -- ^ @break@ statement
             Expr               -- ^ right-hand side of assignment
             Annotations        -- ^ after @;@ symbol
           deriving (Eq, Show)
+
+
+-- | Binary operator
+data BinaryOperator = Or                -- ^ Logical "or" disjunction (@!!@)
+                    | And               -- ^ Logical "and" conjunction (@&&@)
+                    | Equal             -- ^ Equal comparison (@==@)
+                    | NotEqual          -- ^ Not-equal comparison (@!=@)
+                    | Gt                -- ^ Greater than (@>@)
+                    | Geq               -- ^ Greater or equal than (@>=@)
+                    | Lt                -- ^ Less than (@<@)
+                    | Leq               -- ^ Less or equal than (@<=@)
+                    | Add               -- ^ Addition (@+@)
+                    | Sub               -- ^ Subtraction (@-@)
+                    | Mul               -- ^ Multiplication (@*@)
+                    | Div               -- ^ Division (@/@)
+                    | EltMul            -- ^ Element-wise multiplication (@.*@)
+                    | EltDiv            -- ^ Element-wise division (@./@)
+                    | LDiv              -- ^ Left-division (@\\@)
+                    | IntDiv            -- ^ Integer division (@%\\%@)
+                    | Pow               -- ^ Exponentiation (@^@)
+                    | EltPow            -- ^ Element-wise exponentiation (@.^@)
+                    deriving (Eq, Show)
+
 
 -- | top var type
 data VarType = Int                           -- ^ integer

@@ -55,109 +55,110 @@ tests =
       Conditional id_a [] id_b [] (Conditional id_c [] id_p [] id_q)
     ]
   , testGroup "Precedence 9"
-    [ testExpr "a || b||c" $ Or (Or id_a [] id_b) [] id_c
-    , testExpr "a|| b ||c" $ Or (Or id_a [] id_b) [] id_c
+    [ testExpr "a || b||c" $ Binary (Binary id_a Or [] id_b) Or [] id_c
+    , testExpr "a|| b ||c" $ Binary (Binary id_a Or [] id_b) Or [] id_c
     , testExprMsg "annotated ||" "x /*a*/ || /*b*/ /*c*/\ny /*d*/" $
-      Or (Identifier "x" [Bracketed "a"])
-         [Bracketed "b", Bracketed "c", Newline]
-         (Identifier "y" [Bracketed "d"])
+      Binary (Identifier "x" [Bracketed "a"]) Or
+             [Bracketed "b", Bracketed "c", Newline]
+             (Identifier "y" [Bracketed "d"])
     ]
   , testGroup "Precedence 8"
-    [ testExpr "a && b&&c" $ And (And id_a [] id_b) [] id_c
-    , testExpr "a&& b &&c" $ And (And id_a [] id_b) [] id_c
+    [ testExpr "a && b&&c" $ Binary (Binary id_a And [] id_b) And [] id_c
+    , testExpr "a&& b &&c" $ Binary (Binary id_a And [] id_b) And [] id_c
     , testExprMsg "annotated &&" "x /*a*/ && /*b*/ /*c*/\ny /*d*/" $
-      And (Identifier "x" [Bracketed "a"])
-          [Bracketed "b", Bracketed "c", Newline]
-          (Identifier "y" [Bracketed "d"])
+      Binary (Identifier "x" [Bracketed "a"]) And
+             [Bracketed "b", Bracketed "c", Newline]
+             (Identifier "y" [Bracketed "d"])
     ]
   , testGroup "Precedence 7"
-    [ testExpr "a == b==c" $ Equal (Equal id_a [] id_b) [] id_c
-    , testExpr "a != b!=c" $ NotEqual (NotEqual id_a [] id_b) [] id_c
-    , testExpr "a != b==c" $ Equal (NotEqual id_a [] id_b) [] id_c
-    , testExpr "a== b !=c" $ NotEqual (Equal id_a [] id_b) [] id_c
+    [ testExpr "a == b==c" $ Binary (Binary id_a Equal [] id_b) Equal [] id_c
+    , testExpr "a != b!=c" $
+        Binary (Binary id_a NotEqual [] id_b) NotEqual [] id_c
+    , testExpr "a != b==c" $ Binary (Binary id_a NotEqual [] id_b) Equal [] id_c
+    , testExpr "a== b !=c" $ Binary (Binary id_a Equal [] id_b) NotEqual [] id_c
     , testExprMsg "annotated ==" "x /*a*/ == /*b*/ /*c*/\ny /*d*/" $
-      Equal (Identifier "x" [Bracketed "a"])
-            [Bracketed "b", Bracketed "c", Newline]
-            (Identifier "y" [Bracketed "d"])
+      Binary (Identifier "x" [Bracketed "a"]) Equal
+             [Bracketed "b", Bracketed "c", Newline]
+             (Identifier "y" [Bracketed "d"])
     , testExprMsg "annotated !=" "x /*a*/ != /*b*/ /*c*/\ny /*d*/" $
-        NotEqual (Identifier "x" [Bracketed "a"])
-                 [Bracketed "b", Bracketed "c", Newline]
-                 (Identifier "y" [Bracketed "d"])
+        Binary (Identifier "x" [Bracketed "a"]) NotEqual
+               [Bracketed "b", Bracketed "c", Newline]
+               (Identifier "y" [Bracketed "d"])
     ]
   , testGroup "Precedence 6"
-    [ testExpr "a > b > c" $ Gt (Gt id_a [] id_b) [] id_c
-    , testExpr "a >= b >= c" $ Geq (Geq id_a [] id_b) [] id_c
-    , testExpr "a < b < c" $ Lt (Lt id_a [] id_b) [] id_c
-    , testExpr "a <= b <= c" $ Leq (Leq id_a [] id_b) [] id_c
+    [ testExpr "a > b > c" $ Binary (Binary id_a Gt [] id_b) Gt [] id_c
+    , testExpr "a >= b >= c" $ Binary (Binary id_a Geq [] id_b) Geq [] id_c
+    , testExpr "a < b < c" $ Binary (Binary id_a Lt [] id_b) Lt [] id_c
+    , testExpr "a <= b <= c" $ Binary (Binary id_a Leq [] id_b) Leq [] id_c
     , testExprMsg "annotated Gt" "x /*a*/ > /*b*/ /*c*/\ny /*d*/" $
-      Gt (Identifier "x" [Bracketed "a"])
-         [Bracketed "b", Bracketed "c", Newline]
-         (Identifier "y" [Bracketed "d"])
+      Binary (Identifier "x" [Bracketed "a"]) Gt
+             [Bracketed "b", Bracketed "c", Newline]
+             (Identifier "y" [Bracketed "d"])
     , testExprMsg "annotated Geq" "x /*a*/ >= /*b*/ /*c*/\ny /*d*/" $
-      Geq (Identifier "x" [Bracketed "a"])
-          [Bracketed "b", Bracketed "c", Newline]
-          (Identifier "y" [Bracketed "d"])
+      Binary (Identifier "x" [Bracketed "a"]) Geq
+             [Bracketed "b", Bracketed "c", Newline]
+             (Identifier "y" [Bracketed "d"])
     , testExprMsg "annotated Lt" "x /*a*/ < /*b*/ /*c*/\ny /*d*/" $
-      Lt (Identifier "x" [Bracketed "a"])
-         [Bracketed "b", Bracketed "c", Newline]
-         (Identifier "y" [Bracketed "d"])
+      Binary (Identifier "x" [Bracketed "a"]) Lt
+            [Bracketed "b", Bracketed "c", Newline]
+            (Identifier "y" [Bracketed "d"])
     , testExprMsg "annotated Leq" "x /*a*/ <= /*b*/ /*c*/\ny /*d*/" $
-      Leq (Identifier "x" [Bracketed "a"])
-          [Bracketed "b", Bracketed "c", Newline]
-          (Identifier "y" [Bracketed "d"])
+      Binary (Identifier "x" [Bracketed "a"]) Leq
+             [Bracketed "b", Bracketed "c", Newline]
+             (Identifier "y" [Bracketed "d"])
     ]
   , testGroup "Precedence 5"
-    [ testExpr "p + q" $ Add id_p [] id_q
-    , testExpr "0+1" $ Add lit_0 [] lit_1
+    [ testExpr "p + q" $ Binary id_p Add [] id_q
+    , testExpr "0+1" $ Binary lit_0 Add [] lit_1
     , testExprMsg "annotated addition" "3 /*a*/ + /*b*/ /*c*/\n1 /*d*/" $
-      Add (NumLiteral "3" Nothing Nothing [Bracketed "a"])
-                   [Bracketed "b", Bracketed "c", Newline]
-                   (NumLiteral "1" Nothing Nothing [Bracketed "d"])
-    , testExpr "1 +2 +  3" $ Add (Add lit_1 [] lit_2) [] lit_3
-    , testExpr "3 - 4" $ Sub lit_3 [] (NumLiteral "4" Nothing Nothing [])
-    , testExpr "0-1" $ Sub lit_0 [] lit_1
-    , testExprMsg "annotated subtraction" "3 /*a*/ - /*b*/ /*c*/\n2 /*d*/" $
-      Sub (NumLiteral "3" Nothing Nothing [Bracketed "a"])
-                   [Bracketed "b", Bracketed "c", Newline]
-                   (NumLiteral "2" Nothing Nothing [Bracketed "d"])
-    , testExpr "1 -2 +  3" $ Add (Sub lit_1 [] lit_2) [] lit_3
-    ]
-  , testGroup "Precedence 4"
-    [ testExpr "3 * x" $ Mul lit_3 [] id_x
-    , testExpr "0*1" $ Mul lit_0 [] lit_1
-    , testExprMsg "annotated multiplication" "3 /*a*/ * /*b*/ /*c*/\n1 /*d*/" $
-      Mul (NumLiteral "3" Nothing Nothing [Bracketed "a"])
-          [Bracketed "b", Bracketed "c", Newline]
-          (NumLiteral "1" Nothing Nothing [Bracketed "d"])
-    , testExpr "a * b + c" $ Add (Mul id_a [] id_b) [] id_c
-    , testExpr "a + b / c" $ Add id_a [] (Div id_b [] id_c)
-    , testExpr "p .* q" $ EltMul id_p [] id_q
-    , testExpr "p ./ q" $ EltDiv id_p [] id_q
-    ]
-  , testGroup "Precedence 3"
-    [ testExpr "3 \\ x" $ LDiv lit_3 [] id_x
-    , testExpr "0%\\%1" $ IntDiv lit_0 [] lit_1
-    , testExprMsg "annotated int div" "3 /*a*/ %\\% /*b*/ /*c*/\n1 /*d*/" $
-      IntDiv (NumLiteral "3" Nothing Nothing [Bracketed "a"])
+      Binary (NumLiteral "3" Nothing Nothing [Bracketed "a"]) Add 
              [Bracketed "b", Bracketed "c", Newline]
              (NumLiteral "1" Nothing Nothing [Bracketed "d"])
-    , testExpr "a \\ b + c" $ Add (LDiv id_a [] id_b) [] id_c
-    , testExpr "a + b %\\% c" $ Add id_a [] (IntDiv id_b [] id_c)
+    , testExpr "1 +2 +  3" $ Binary (Binary lit_1 Add [] lit_2) Add [] lit_3
+    , testExpr "3 - 4" $ Binary lit_3 Sub [] (NumLiteral "4" Nothing Nothing [])
+    , testExpr "0-1" $ Binary lit_0 Sub [] lit_1
+    , testExprMsg "annotated subtraction" "3 /*a*/ - /*b*/ /*c*/\n2 /*d*/" $
+      Binary (NumLiteral "3" Nothing Nothing [Bracketed "a"]) Sub
+             [Bracketed "b", Bracketed "c", Newline]
+             (NumLiteral "2" Nothing Nothing [Bracketed "d"])
+    , testExpr "1 -2 +  3" $ Binary (Binary lit_1 Sub [] lit_2) Add [] lit_3
+    ]
+  , testGroup "Precedence 4"
+    [ testExpr "3 * x" $ Binary lit_3 Mul [] id_x
+    , testExpr "0*1" $ Binary lit_0 Mul [] lit_1
+    , testExprMsg "annotated multiplication" "3 /*a*/ * /*b*/ /*c*/\n1 /*d*/" $
+      Binary (NumLiteral "3" Nothing Nothing [Bracketed "a"]) Mul
+             [Bracketed "b", Bracketed "c", Newline]
+             (NumLiteral "1" Nothing Nothing [Bracketed "d"])
+    , testExpr "a * b + c" $ Binary (Binary id_a Mul [] id_b) Add [] id_c
+    , testExpr "a + b / c" $ Binary id_a Add [] (Binary id_b Div [] id_c)
+    , testExpr "p .* q" $ Binary id_p EltMul [] id_q
+    , testExpr "p ./ q" $ Binary id_p EltDiv [] id_q
     ]
   , testGroup "Precedence 3"
-    [ testExpr "3^x" $ Pow lit_3 [] id_x
-    , testExpr "x^p^q" $ Pow id_x [] (Pow id_p [] id_q)
-    , testExpr "x.^p.^q" $ EltPow id_x [] (EltPow id_p [] id_q)
-    , testExpr "p .^ 1" $ EltPow id_p [] lit_1
-    , testExpr "p.^ 1" $ EltPow id_p [] lit_1
-    , testExpr "a .^2" $ EltPow id_a [] lit_2
-    , testExpr "a.^2" $ EltPow id_a [] lit_2
+    [ testExpr "3 \\ x" $ Binary lit_3 LDiv [] id_x
+    , testExpr "0%\\%1" $ Binary lit_0 IntDiv [] lit_1
+    , testExprMsg "annotated int div" "3 /*a*/ %\\% /*b*/ /*c*/\n1 /*d*/" $
+      Binary (NumLiteral "3" Nothing Nothing [Bracketed "a"]) IntDiv
+             [Bracketed "b", Bracketed "c", Newline]
+             (NumLiteral "1" Nothing Nothing [Bracketed "d"])
+    , testExpr "a \\ b + c" $ Binary (Binary id_a LDiv [] id_b) Add [] id_c
+    , testExpr "a + b %\\% c" $ Binary id_a Add [] (Binary id_b IntDiv [] id_c)
+    ]
+  , testGroup "Precedence 3"
+    [ testExpr "3^x" $ Binary lit_3 Pow [] id_x
+    , testExpr "x^p^q" $ Binary id_x Pow [] (Binary id_p Pow [] id_q)
+    , testExpr "x.^p.^q" $ Binary id_x EltPow [] (Binary id_p EltPow [] id_q)
+    , testExpr "p .^ 1" $ Binary id_p EltPow [] lit_1
+    , testExpr "p.^ 1" $ Binary id_p EltPow [] lit_1
+    , testExpr "a .^2" $ Binary id_a EltPow [] lit_2
+    , testExpr "a.^2" $ Binary id_a EltPow [] lit_2
     , testExprMsg "annotated pow" "3 /*a*/ ^ /*b*/ /*c*/\n1 /*d*/" $
-      Pow (NumLiteral "3" Nothing Nothing [Bracketed "a"])
-          [Bracketed "b", Bracketed "c", Newline]
-          (NumLiteral "1" Nothing Nothing [Bracketed "d"])
-    , testExpr "a ^ b + c" $ Add (Pow id_a [] id_b) [] id_c
-    , testExpr "a + b .^ c" $ Add id_a [] (EltPow id_b [] id_c)
+      Binary (NumLiteral "3" Nothing Nothing [Bracketed "a"]) Pow
+             [Bracketed "b", Bracketed "c", Newline]
+             (NumLiteral "1" Nothing Nothing [Bracketed "d"])
+    , testExpr "a ^ b + c" $ Binary (Binary id_a Pow [] id_b) Add [] id_c
+    , testExpr "a + b .^ c" $ Binary id_a Add [] (Binary id_b EltPow [] id_c)
     ]
   , testGroup "Precedence 2"
     [ testExpr "!a" $ LogicalNeg [] id_a
@@ -436,7 +437,7 @@ tests =
     ]
   , testGroup "tilde stmt"
     [ testStmt "a+1 ~ x(p,q);" $
-        Tilde (Add id_a [] lit_1) [] (Call id_x [id_p, id_q] [[], []] []) []
+        Tilde (Binary id_a Add [] lit_1) [] (Call id_x [id_p, id_q] [[], []] []) []
     , testStmt "a ~/*A*/x();/*B*/" $
         Tilde id_a [Bracketed "A"] (Call id_x [] [[]] []) [Bracketed "B"]
     ]

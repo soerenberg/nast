@@ -30,8 +30,6 @@ module Text.Nast.Parser (
   , primary
   , identifier
   , parentheses
-  , BinConstr
-  , binOp
   -- * code annotations
   , codeAnnotations
   , codeAnnotations1
@@ -203,7 +201,7 @@ Precedence level 9 expressions
 * logical @||@ op, binary infix, left associative; "or" disjunction
 -}
 precedence9 :: Parser Expr
-precedence9 = chainl1 precedence8 $ binOp "||" Or
+precedence9 = chainl1 precedence8 $ binary "||" Or
 
 {-|
 Precedence level 8 expressions
@@ -211,7 +209,7 @@ Precedence level 8 expressions
 * logical @&&@ op, binary infix, left associative; "and" conjunction
 -}
 precedence8 :: Parser Expr
-precedence8 = chainl1 precedence7 $ binOp "&&" And
+precedence8 = chainl1 precedence7 $ binary "&&" And
 
 {-|
 Precedence level 7 expressions
@@ -220,7 +218,7 @@ Precedence level 7 expressions
 * logical @!=@ op, binary infix, left associative; not equal to
 -}
 precedence7 :: Parser Expr
-precedence7 = chainl1 precedence6 $ binOp "!=" NotEqual <|> binOp "==" Equal
+precedence7 = chainl1 precedence6 $ binary "!=" NotEqual <|> binary "==" Equal
 
 {-|
 Precedence level 6 expressions
@@ -232,10 +230,10 @@ Precedence level 6 expressions
 -}
 precedence6 :: Parser Expr
 precedence6 = chainl1 precedence5 op
-  where op = try (binOp "<=" Leq)
-             <|> binOp "<" Lt
-             <|> try (binOp ">=" Geq)
-             <|> binOp ">" Gt
+  where op = try (binary "<=" Leq)
+             <|> binary "<" Lt
+             <|> try (binary ">=" Geq)
+             <|> binary ">" Gt
 
 {-|
 Precedence level 5 expressions
@@ -244,7 +242,7 @@ Precedence level 5 expressions
 * @-@ op, binary infix, left associative; subtraction
 -}
 precedence5 :: Parser Expr
-precedence5 = chainl1 precedence4 $ binOp "+" Add <|> binOp "-" Sub
+precedence5 = chainl1 precedence4 $ binary "+" Add <|> binary "-" Sub
 
 {-|
 Precedence level 4 expressions
@@ -257,10 +255,10 @@ Precedence level 4 expressions
 -}
 precedence4 :: Parser Expr
 precedence4 = chainl1 precedence3 op
-  where op = binOp "*" Mul
-             <|> binOp "/" Div
-             <|> try (binOp ".*" EltMul)
-             <|> binOp "./" EltDiv
+  where op = binary "*" Mul
+             <|> binary "/" Div
+             <|> try (binary ".*" EltMul)
+             <|> binary "./" EltDiv
 
 {-|
 Precedence level 3 expressions
@@ -269,8 +267,8 @@ Precedence level 3 expressions
 * @%\%@ op, binary infix, left associative; integer division
 -}
 precedence3 :: Parser Expr
--- precedence3 = chainl1 precedence2 $ binOp ["\\", "%\\%"]
-precedence3 = chainl1 precedence2 $ binOp "\\" LDiv <|> binOp "%\\%" IntDiv
+-- precedence3 = chainl1 precedence2 $ binary ["\\", "%\\%"]
+precedence3 = chainl1 precedence2 $ binary "\\" LDiv <|> binary "%\\%" IntDiv
 
 {-|
 Precedence level 2 expressions
@@ -296,9 +294,9 @@ precedence1 = do e <- precedence0
                  (try $ char '^' >> completeBin Pow e) <|>
                    (try $ string ".^" >> completeBin EltPow e) <|>
                    return e
-  where completeBin f e = do xs <- codeAnnotations
-                             r <- precedence1
-                             return $ f e xs r
+  where completeBin op e = do xs <- codeAnnotations
+                              r <- precedence1
+                              return $ Binary e op xs r
 
 {-|
 Precedence level 0 expressions
@@ -416,18 +414,10 @@ parentheses = do xs <- char '(' >> codeAnnotations
                  ys <- char ')' >> codeAnnotations
                  return $ Parens xs e ys
 
-{-| Type synonym for constructors of `Expr a` that represent binary Stan
-operations.
--}
-type BinConstr = Expr               -- ^ left-hand side
-               -> Annotations       -- ^ annotations ofter op symbol
-               -> Expr              -- ^ right-hand side
-               -> Expr
-
 {-| Parse annotated binary operator on expressions -}
-binOp :: String -> BinConstr -> Parser (Expr -> Expr -> Expr)
-binOp s c = do xs <- string s >> codeAnnotations
-               return $ (\l r -> c l xs r)
+binary :: String -> BinaryOperator -> Parser (Expr -> Expr -> Expr)
+binary s op = do xs <- string s >> codeAnnotations
+                 return $ (\l r -> Binary l op xs r)
 
 -- | Zero or more comments and newlines
 codeAnnotations :: Parser Annotations

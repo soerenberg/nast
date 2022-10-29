@@ -73,12 +73,8 @@ transformedParametersBlock =
         (Identifier "mu_cent" [])
         Nothing
         []
-        (Add (Identifier "alpha" [])
-             []
-             (Mul (Identifier "gamma" [])
-                  []
-                  (Identifier "mu" [])
-             ))
+        (Binary (Identifier "alpha" []) Add []
+             (Binary (Identifier "gamma" []) Mul [] (Identifier "mu" [])))
         [LineBased " centered group means"]
     ] [Newline]
 
