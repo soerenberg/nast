@@ -1,27 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module IntegrationTests.Schools (tests) where
 
-import Text.Nast.AnnotatedAST
-  ( StanProgram (..)
-  , ProgramBlock (..)
-  , CodeAnnotation (..)
-  , Expr (..)
-  , Stmt (..)
-  , VarConstraint (..)
-  , VarConstraints (..)
-  , VarType (..)
-  , ArrayDims (..)
-  )
-
-import Text.Nast.Parser (stanProgram)
-
-import Text.Parsec (parse)
-
-import Test.Tasty (TestTree)
-import Test.Tasty.HUnit (testCase, (@?=))
-
-import Data.Text (Text, pack)
+import Data.Text        (Text, pack)
 import System.IO.Unsafe (unsafePerformIO)
+import Test.Tasty       (TestTree)
+import Test.Tasty.HUnit (testCase, (@?=))
+import Text.Parsec      (parse)
+
+import Text.Nast.AnnotatedAST
+import Text.Nast.Parser
 
 
 tests :: [TestTree]

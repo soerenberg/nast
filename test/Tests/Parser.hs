@@ -1,17 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Tests.Parser (tests) where
 
-import Text.Nast.AnnotatedAST
-import Text.Nast.Parser
-
-import Text.Parsec (parse)
+import Data.Either      (isLeft)
+import Data.Text        (Text, unpack)
+import Test.Tasty       (TestTree, testGroup)
+import Test.Tasty.HUnit (assertBool, testCase, (@?=))
+import Text.Parsec      (parse)
 import Text.Parsec.Text (Parser)
 
-import Test.Tasty (TestTree, testGroup)
-import Test.Tasty.HUnit (assertBool, testCase, (@?=))
-
-import Data.Either (isLeft)
-import Data.Text (Text, unpack)
+import Text.Nast.AnnotatedAST
+import Text.Nast.Parser
 
 
 -- | Assert that a parse fails (returns Left)
@@ -277,7 +275,7 @@ tests =
     ]
   , testGroup "printables"
     [ testParser printables "a" $ Printables [id_a] [[]]
-    , testParser printables "a, \"xy\", b" $ 
+    , testParser printables "a, \"xy\", b" $
         Printables [id_a, StringLiteral "xy" [], id_b] [[], [], []]
     , testParser printables "/*A*/a,/*B*/b" $
         Printables [id_a, id_b] [[Bracketed "A"], [Bracketed "B"]]
