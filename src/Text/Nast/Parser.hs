@@ -99,22 +99,6 @@ import Control.Monad (void)
 import Data.Maybe (maybeToList)
 
 import Text.Nast.AnnotatedAST
-  ( StanProgram (..)
-  , ProgramBlock (..)
-  , Expr (..)
-  , Stmt (..)
-  , Annotations
-  , CodeAnnotation (..)
-  , VarType (..)
-  , ScalarVarType
-  , VectorVarType
-  , VectorNoConstrVarType
-  , MatrixVarType
-  , MatrixOptDimsVarType
-  , VarConstraints (..)
-  , VarConstraint (..)
-  , ArrayDims (..)
-  )
 
 
 -- | Stan program

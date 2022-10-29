@@ -2,30 +2,7 @@
 module Tests.Parser (tests) where
 
 import Text.Nast.AnnotatedAST
-  ( Expr (..)
-  , Stmt (..)
-  , CodeAnnotation (..)
-  , VarType (..)
-  , VarConstraints (..)
-  , VarConstraint (..)
-  , ArrayDims (..)
-  )
-
 import Text.Nast.Parser
-  ( expression
-  , printables
-  , identifier
-  , numLiteral
-  , stringLiteral
-  , codeAnnotations
-  , codeAnnotations1
-  , range
-  , whitespace
-  , statement
-  , lhs
-  , varDeclaration
-  , varType
-  )
 
 import Text.Parsec (parse)
 import Text.Parsec.Text (Parser)
