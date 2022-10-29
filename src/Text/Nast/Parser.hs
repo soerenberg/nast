@@ -104,14 +104,15 @@ stanProgram :: Parser StanProgram
 stanProgram =
   do h   <- codeAnnotations
      let fb = Nothing  -- TODO not implemented
-     db  <- optionMaybe $ try $ programBlock "data"                   True False False
-     tdb <- optionMaybe $ try $ programBlock "transformed data"       True True True
-     pb  <- optionMaybe $ try $ programBlock "parameters"             True False False
-     tpb <- optionMaybe $ try $ programBlock "transformed parameters" True True True
-     mb  <- optionMaybe $ try $ programBlock "model"                  False True True
-     gqb <- optionMaybe $ try $ programBlock "generated quantities"   True True True
+     db  <- optTry $ programBlock "data"                   True False False
+     tdb <- optTry $ programBlock "transformed data"       True True True
+     pb  <- optTry $ programBlock "parameters"             True False False
+     tpb <- optTry $ programBlock "transformed parameters" True True True
+     mb  <- optTry $ programBlock "model"                  False True True
+     gqb <- optTry $ programBlock "generated quantities"   True True True
      _ <- eol
      return $ StanProgram h fb db tdb pb tpb mb gqb
+  where optTry = optionMaybe . try
 
 -- | allow variable constraints in declaration
 type AllowVarConstraints = Bool
