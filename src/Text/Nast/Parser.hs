@@ -494,8 +494,8 @@ statement =   (try $ keyword "break" Break)
           <|> try reject
           <|> block
           <|> ifElse
-          <|> try for
-          <|> try while
+          <|> for
+          <|> while
           <|> try targetPlusAssign
           <|> try incrementLogProb
           <|> try assignment
@@ -561,8 +561,7 @@ assignOp = foldr1 (<|>) [p s f | (s, f) <- tokenConsts]
 
 {-| Parse for-loop statement -}
 for :: Parser Stmt
-for = do xs <- string "for" >> codeAnnotations
-         ys <- char '(' >> codeAnnotations
+for = do (xs, ys) <- try $ keywordChar "for" '('
          i <- identifier
          zs <- string "in" >> codeAnnotations
          l <- expression
@@ -576,8 +575,7 @@ for = do xs <- string "for" >> codeAnnotations
 
 {-| Parse while-loop statement -}
 while :: Parser Stmt
-while = do xs <- string "while" >> codeAnnotations
-           ys <- char '(' >> codeAnnotations
+while = do (xs, ys) <- try $ keywordChar "while" '('
            cond <- expression
            zs <- char ')' >> codeAnnotations
            b <- statement
