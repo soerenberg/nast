@@ -223,10 +223,12 @@ tests =
         Call (Identifier "f" []) [] [[Bracketed "xy"]] []
     , testExpr "f(a, b , c)" $
         Call (Identifier "f" [])
-                      [ Identifier "a" []
-                      , Identifier "b" []
-                      , Identifier "c" []]
-                      [[], [], []] []
+             [ Identifier "a" [] , Identifier "b" [] , Identifier "c" []]
+             [[], [], []] []
+    , testExpr "f(a | b , c)" $
+        CallBar (Identifier "f" [])
+                [ Identifier "a" [] , Identifier "b" [] , Identifier "c" []]
+                [[], [], []] []
     , testExpr "f /*ab*/ ( /*xy*/) /*pq*/" $
         Call (Identifier "f" [Bracketed "ab"]) [] [[Bracketed "xy"]]
              [Bracketed "pq"]
@@ -237,6 +239,11 @@ tests =
              , Identifier "b" []
              , Identifier "c" []]
              [[Bracketed "A"], [], [Bracketed "D"]] []
+    , testExpr "f(/*A*/a|/*B*/b)/*C*/" $
+        CallBar (Identifier "f" [])
+                [ Identifier "a" []
+                , Identifier "b" []]
+                [[Bracketed "A"], [Bracketed "B"]] [Bracketed "C"]
     , testExpr "M'" $ Transpose (Identifier "M" []) []
     , testExpr "M/*a*/'/*b*/" $
         Transpose (Identifier "M" [Bracketed "a"]) [Bracketed "b"]

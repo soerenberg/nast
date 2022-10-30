@@ -22,6 +22,7 @@ module Text.Nast.Parser (
   , precedence1
   , precedence0
   , completeCall
+  , completeBarCall
   , completeIndex
   , CallLikeConstr
   , callLike
@@ -309,7 +310,7 @@ Precedence level 0 expressions
 -}
 precedence0 :: Parser Expr
 precedence0 = do e <- primary  -- Parse primary only once for efficiency
-                 (t e) <|> (completeCall e) <|> (completeIndex e) <|> (return e)
+                 (t e) <|> (try $ completeBarCall e) <|> (completeCall e) <|> (completeIndex e) <|> (return e)
   where t e = do xs <- char '\'' >> codeAnnotations
                  return $ Transpose e xs
 
@@ -319,6 +320,20 @@ as an argument.
 -}
 completeCall :: Expr -> Parser Expr
 completeCall = callLike '(' ')' Call expression
+
+{-|
+Complete function call of the form @f(a | b, ..)@. We assume that the call is
+already consumed and passed as an argument.
+-}
+completeBarCall :: Expr -> Parser Expr
+completeBarCall callee =
+  do xs <- char '(' >> codeAnnotations
+     e <- expression
+     _ <- char '|'
+     tuples <- ((,) <$> codeAnnotations <*> expression) `sepBy` (char ',')
+     let (as, args) = if null tuples then ([[]], []) else unzip tuples
+     ys <- char ')' >> codeAnnotations
+     return $ CallBar callee (e:args) (xs:as) ys
 
 {-|
 Complete array/vector/matrix expression. We assume that the object to be indexed
@@ -418,7 +433,7 @@ parentheses = do xs <- char '(' >> codeAnnotations
 
 {-| Parse annotated binary operator on expressions -}
 binary :: String -> BinaryOperator -> Parser (Expr -> Expr -> Expr)
-binary s op = do xs <- string s >> codeAnnotations
+binary s op = do xs <- (try $ string s) >> codeAnnotations
                  return $ (\l r -> Binary l op xs r)
 
 -- | Zero or more comments and newlines

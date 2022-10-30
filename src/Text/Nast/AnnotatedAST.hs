@@ -69,6 +69,11 @@ data Expr = Conditional       -- ^ Ternary @?:@ conditional
             [Expr]            -- ^ arguments
             [Annotations]     -- ^ annotations preceding each argement
             Annotations       -- ^ succeeding closing @)@ token
+          | CallBar           -- ^ Function application @f(a | ...)@
+            Expr              -- ^ callee
+            [Expr]            -- ^ arguments
+            [Annotations]     -- ^ annotations preceding each argement
+            Annotations       -- ^ succeeding closing @)@ token
           | Index             -- ^ Array indexing
             Expr              -- ^ expression to index
             [Expr]            -- ^ indices
