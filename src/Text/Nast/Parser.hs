@@ -310,7 +310,10 @@ Precedence level 0 expressions
 -}
 precedence0 :: Parser Expr
 precedence0 = do e <- primary  -- Parse primary only once for efficiency
-                 (t e) <|> (try $ completeBarCall e) <|> (completeCall e) <|> (completeIndex e) <|> (return e)
+                 (t e) <|> (try $ completeBarCall e)
+                       <|> (completeCall e)
+                       <|> (completeIndex e)
+                       <|> (return e)
   where t e = do xs <- char '\'' >> codeAnnotations
                  return $ Transpose e xs
 
