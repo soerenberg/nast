@@ -121,11 +121,15 @@ data Stmt = Break             -- ^ @break@ statement
             Annotations       -- ^ succeeding the closing @}@
           | If                -- ^ If statement (without else clause)
             Annotations       -- ^ succeeding the @if@ keyword
+            Annotations       -- ^ succeeding the opening @(@
             Expr              -- ^ conditional expression
+            Annotations       -- ^ succeeding the closing @)@
             Stmt              -- ^ "then" statement
           | IfElse            -- ^ If / else statement
             Annotations       -- ^ succeeding the @if@ keyword
+            Annotations       -- ^ succeeding the opening @(@
             Expr              -- ^ conditional expression
+            Annotations       -- ^ succeeding the closing @)@
             Stmt              -- ^ "then" statement
             Annotations       -- ^ succeeding the @else@ keyword
             Stmt              -- ^ "else" statement

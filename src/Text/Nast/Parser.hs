@@ -41,6 +41,8 @@ module Text.Nast.Parser (
   , eol
   , newline
   , whitespace
+  , whitespace1
+  , keywordChar
   -- * statements
   , statement
   , keyword
@@ -479,6 +481,10 @@ whitespace = many $ oneOf " \t"
 whitespace1 :: Parser String
 whitespace1 = many1 $ oneOf " \t"
 
+-- | Parse sequence of annotated keyword & annotated character
+keywordChar :: String -> Char -> Parser (Annotations, Annotations)
+keywordChar s c = (,) <$> (string s >> codeAnnotations) <*> (char c >> codeAnnotations)
+
 -- | Parse statements
 statement :: Parser Stmt
 statement =   (try $ keyword "break" Break)
@@ -487,7 +493,7 @@ statement =   (try $ keyword "break" Break)
           <|> try printStmt
           <|> try reject
           <|> block
-          <|> try ifElse
+          <|> ifElse
           <|> try for
           <|> try while
           <|> try targetPlusAssign
@@ -514,14 +520,15 @@ block = do xs <- char '{' >> codeAnnotations
 
 -- | Parse if then (else) statements
 ifElse :: Parser Stmt
-ifElse = do xs <- string "if" >> codeAnnotations
-            cond <- parentheses
+ifElse = do (xs, ys) <- try $ keywordChar "if" '('
+            cond <- expression
+            zs <- char ')' >> codeAnnotations
             stmt <- statement
             elseAnn <- optionMaybe $ try $ string "else" >> codeAnnotations
             case elseAnn of
-              Nothing -> return $ If xs cond stmt
-              Just ys -> do stmt' <- statement
-                            return $ IfElse xs cond stmt ys stmt'
+              Nothing -> return $ If xs ys cond zs stmt
+              Just vs -> do stmt' <- statement
+                            return $ IfElse xs ys cond zs stmt vs stmt'
 
 -- | Parse assignment statement ops such as @=@, @<-@, @+=@, @*=@
 assignment :: Parser Stmt

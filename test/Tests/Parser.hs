@@ -361,11 +361,11 @@ tests =
     ]
   , testGroup "if/else"
     [ testStmt "if (a) return;" $
-        If [] (Parens [] id_a []) (Return [] Nothing [])
+        If [] [] id_a [] (Return [] Nothing [])
     , testStmt "if (a) return; else {}" $
-        IfElse [] (Parens [] id_a []) (Return [] Nothing []) [] (Block [] [] [])
+        IfElse [] [] id_a [] (Return [] Nothing []) [] (Block [] [] [])
     , testStmt "if/*A*/(a) return; else/*B*/{}" $
-        IfElse [Bracketed "A"] (Parens [] id_a []) (Return [] Nothing [])
+        IfElse [Bracketed "A"] [] id_a [] (Return [] Nothing [])
                [Bracketed "B"] (Block [] [] [])
     ]
   , testGroup "assignments"
