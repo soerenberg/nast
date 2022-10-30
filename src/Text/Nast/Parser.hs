@@ -490,8 +490,8 @@ statement :: Parser Stmt
 statement =   (try $ keyword "break" Break)
           <|> (try $ keyword "continue" Continue)
           <|> try returnStmt
-          <|> try printStmt
-          <|> try reject
+          <|> printStmt
+          <|> reject
           <|> block
           <|> ifElse
           <|> for
@@ -599,7 +599,7 @@ returnStmt = do xs <- string "return" >> codeAnnotations
 
 {-| Print statement -}
 printStmt :: Parser Stmt
-printStmt = do xs <- string "print" >> codeAnnotations <* char '('
+printStmt = do xs <- try $ string "print" >> codeAnnotations <* char '('
                ps <- printables
                ys <- char ')' >> codeAnnotations
                zs <- char ';' >> codeAnnotations
@@ -607,7 +607,7 @@ printStmt = do xs <- string "print" >> codeAnnotations <* char '('
 
 {-| Reject statement -}
 reject :: Parser Stmt
-reject = do xs <- string "reject" >> codeAnnotations <* char '('
+reject = do xs <- try $ string "reject" >> codeAnnotations <* char '('
             ps <- printables
             ys <- char ')' >> codeAnnotations
             zs <- char ';' >> codeAnnotations
