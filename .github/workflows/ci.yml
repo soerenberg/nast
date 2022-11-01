@@ -1,0 +1,27 @@
+name: continuous-integration
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: [ubuntu-latest]
+    steps:
+
+      - name: Check out
+        uses: actions/checkout@v2
+      - name: Versions
+        run: |
+          stack --version
+          cabal --version
+          ghc --version
+      - name: Initalize stack for LTS
+        run: |
+          stack update
+          stack init --force
+      - name: Build package
+        run: |
+          stack build
+      - name: Run tests
+        run: |
+          stack test
