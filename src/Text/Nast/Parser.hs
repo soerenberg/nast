@@ -42,7 +42,7 @@ module Text.Nast.Parser (
   , newline
   , whitespace
   , whitespace1
-  , keywordChar
+  , annotatedStrings
   -- * statements
   , statement
   , keyword
@@ -481,9 +481,10 @@ whitespace = many $ oneOf " \t"
 whitespace1 :: Parser String
 whitespace1 = many1 $ oneOf " \t"
 
--- | Parse sequence of annotated keyword & annotated character
-keywordChar :: String -> Char -> Parser (Annotations, Annotations)
-keywordChar s c = (,) <$> (string s >> codeAnnotations) <*> (char c >> codeAnnotations)
+-- | Parse two strings each followed by annotations
+annotatedStrings :: String -> String -> Parser (Annotations, Annotations)
+annotatedStrings a b = (,) <$> anns a <*> anns b
+  where anns xs = string xs >> codeAnnotations
 
 -- | Parse statements
 statement :: Parser Stmt
@@ -496,8 +497,8 @@ statement =   (try $ keyword "break" Break)
           <|> ifElse
           <|> for
           <|> while
-          <|> try targetPlusAssign
-          <|> try incrementLogProb
+          <|> targetPlusAssign
+          <|> incrementLogProb
           <|> try assignment
           <|> try tilde
           <|> emptyStmt
@@ -520,7 +521,7 @@ block = do xs <- char '{' >> codeAnnotations
 
 -- | Parse if then (else) statements
 ifElse :: Parser Stmt
-ifElse = do (xs, ys) <- try $ keywordChar "if" '('
+ifElse = do (xs, ys) <- try $ annotatedStrings "if" "("
             cond <- expression
             zs <- char ')' >> codeAnnotations
             stmt <- statement
@@ -561,7 +562,7 @@ assignOp = foldr1 (<|>) [p s f | (s, f) <- tokenConsts]
 
 {-| Parse for-loop statement -}
 for :: Parser Stmt
-for = do (xs, ys) <- try $ keywordChar "for" '('
+for = do (xs, ys) <- try $ annotatedStrings "for" "("
          i <- identifier
          zs <- string "in" >> codeAnnotations
          l <- expression
@@ -575,7 +576,7 @@ for = do (xs, ys) <- try $ keywordChar "for" '('
 
 {-| Parse while-loop statement -}
 while :: Parser Stmt
-while = do (xs, ys) <- try $ keywordChar "while" '('
+while = do (xs, ys) <- try $ annotatedStrings "while" "("
            cond <- expression
            zs <- char ')' >> codeAnnotations
            b <- statement
@@ -615,16 +616,15 @@ reject = do xs <- try $ string "reject" >> codeAnnotations <* char '('
 
 {-| Target plus-assign statement, e.g., @target += expr;@. -}
 targetPlusAssign :: Parser Stmt
-targetPlusAssign = do xs <- string "target" >> codeAnnotations
-                      ys <- string "+=" >> codeAnnotations
+targetPlusAssign = do (xs, ys) <- try $ annotatedStrings "target" "+="
                       e <- expression
                       zs <- char ';' >> codeAnnotations
                       return $ TargetPlusAssign xs ys e zs
 
 {-| Increment log prob call -}
 incrementLogProb :: Parser Stmt
-incrementLogProb = do xs <- string "increment_log_prob" >> codeAnnotations
-                      ys <- char '(' >> codeAnnotations
+incrementLogProb = do (xs, ys) <- try $
+                        annotatedStrings "increment_log_prob" "("
                       e <- expression
                       zs <- char ')' >> codeAnnotations
                       vs <- char ';' >> codeAnnotations
