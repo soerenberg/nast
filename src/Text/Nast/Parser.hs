@@ -452,18 +452,16 @@ codeAnnotations1 = try annotations <|> justWhitespaces
 
 -- | Stan comment
 comment :: Parser CodeAnnotation
-comment =   try lineBased
-        <|> try bracketed
-        <?> "comment"
+comment = lineBased <|> bracketed <?> "comment"
 
 -- | @//* ... *//@ style comment
 bracketed :: Parser CodeAnnotation
-bracketed = do c <- string "/*" >> manyTill anyChar (try $ string "*/")
+bracketed = do c <- (try $ string "/*") >> manyTill anyChar (try $ string "*/")
                return $ Bracketed c
 
 -- | @// ...@ style comment
 lineBased :: Parser CodeAnnotation
-lineBased = do c <- string "//" >> manyTill (noneOf "\n") eol
+lineBased = do c <- (try $ string "//") >> manyTill (noneOf "\n") eol
                return $ LineBased c
 
 eol :: Parser ()
