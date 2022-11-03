@@ -499,7 +499,7 @@ statement =   (try $ keyword "break" Break)
           <|> while
           <|> targetPlusAssign
           <|> incrementLogProb
-          <|> try assignment
+          <|> assignment
           <|> tilde
           <|> emptyStmt
           <?> "statement"
@@ -533,8 +533,7 @@ ifElse = do (xs, ys) <- try $ annotatedStrings "if" "("
 
 -- | Parse assignment statement ops such as @=@, @<-@, @+=@, @*=@
 assignment :: Parser Stmt
-assignment = do l <- lhs
-                (xs, op) <- assignOp
+assignment = do (l, (xs, op)) <- try $ (,) <$> lhs <*> assignOp
                 r <- expression
                 ys <- char ';' >> codeAnnotations
                 return $ op l xs r ys
