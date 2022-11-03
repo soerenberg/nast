@@ -500,7 +500,7 @@ statement =   (try $ keyword "break" Break)
           <|> targetPlusAssign
           <|> incrementLogProb
           <|> try assignment
-          <|> try tilde
+          <|> tilde
           <|> emptyStmt
           <?> "statement"
 
@@ -584,8 +584,7 @@ while = do (xs, ys) <- try $ annotatedStrings "while" "("
 
 {-| Tilde statement -}
 tilde :: Parser Stmt
-tilde = do l <- expression
-           xs <- char '~' >> codeAnnotations
+tilde = do (l, xs) <- try $ (,) <$> expression <*> (char '~' >> codeAnnotations)
            i <- identifier
            r <- completeCall i
            ys <- char ';' >> codeAnnotations
