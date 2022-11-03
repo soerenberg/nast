@@ -138,7 +138,7 @@ programBlock name allowConstr allowAssign allowStmts =
      zs <- char '}' >> codeAnnotations
      return $ ProgramBlock xs ys stmts zs
   where stmt = if allowStmts
-                 then try declarations <|> statement
+                 then declarations <|> statement
                  else declarations
         declarations = varDeclaration allowConstr allowAssign
 
@@ -632,10 +632,10 @@ emptyStmt = char ';' >> codeAnnotations >>= return . Empty
 
 -- | top var declaration
 varDeclaration :: AllowVarConstraints  -- ^ allow var constraints
-                  -> AllowAssignment      -- ^ allow initial assignments
-                  -> Parser Stmt
+               -> AllowAssignment      -- ^ allow initial assignments
+               -> Parser Stmt
 varDeclaration allowConstraints allowAssignment =
-  do t <- varType allowConstraints
+  do t <- try $ varType allowConstraints
      i <- identifier
      dims <- optionMaybe $ try arrayDims
      if allowAssignment
