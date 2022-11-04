@@ -311,10 +311,10 @@ Precedence level 0 expressions
 -}
 precedence0 :: Parser Expr
 precedence0 = do e <- primary  -- Parse primary only once for efficiency
-                 (t e) <|> (try $ completeBarCall e)
-                       <|> (completeCall e)
-                       <|> (completeIndex e)
-                       <|> (return e)
+                 (t e) <|> completeBarCall e
+                       <|> completeCall e
+                       <|> completeIndex e
+                       <|> return e
   where t e = do xs <- char '\'' >> codeAnnotations
                  return $ Transpose e xs
 
@@ -331,13 +331,12 @@ already consumed and passed as an argument.
 -}
 completeBarCall :: Expr -> Parser Expr
 completeBarCall callee =
-  do xs <- char '(' >> codeAnnotations
-     e <- expression
-     _ <- char '|'
+  do (xs, e) <- try $ (,) <$> achar '(' <*> expression <* char '|'
      tuples <- ((,) <$> codeAnnotations <*> expression) `sepBy` (char ',')
      let (as, args) = if null tuples then ([[]], []) else unzip tuples
      ys <- char ')' >> codeAnnotations
      return $ CallBar callee (e:args) (xs:as) ys
+  where achar c = char c >> codeAnnotations
 
 {-|
 Complete array/vector/matrix expression. We assume that the object to be indexed
