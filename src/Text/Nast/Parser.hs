@@ -34,6 +34,9 @@ module Text.Nast.Parser (
   -- * code annotations
   , codeAnnotations
   , codeAnnotations1
+  , achar
+  , astring
+  , astringsTuple
   , comment
   , bracketed
   , lineBased
@@ -42,7 +45,6 @@ module Text.Nast.Parser (
   , newline
   , whitespace
   , whitespace1
-  , annotatedStrings
   -- * statements
   , statement
   , keyword
@@ -132,10 +134,10 @@ programBlock :: String               -- ^ block name
              -> AllowStatements      -- ^ allow non-declaration statements
              -> Parser ProgramBlock
 programBlock name allowConstr allowAssign allowStmts =
-  do xs <- try $ string name >> codeAnnotations
-     ys <- char '{' >> codeAnnotations
+  do xs <- try $ astring name
+     ys <- achar '{'
      stmts <- many stmt
-     zs <- char '}' >> codeAnnotations
+     zs <- achar '}'
      return $ ProgramBlock xs ys stmts zs
   where stmt = if allowStmts
                  then declarations <|> statement
@@ -161,7 +163,7 @@ signedInt = do plus <|> minus <|> nosign
 -- | String literal, e.g. @"abc"@
 stringLiteral :: Parser Expr
 stringLiteral = do s <- char '"' >> (many $ noneOf "\n\"")
-                   xs <- char '"' >> codeAnnotations
+                   xs <- achar '"'
                    return $ StringLiteral s xs
 
 -- | Stan expression
@@ -193,9 +195,9 @@ precedence10 :: Parser Expr
 -- unnecessarily expensive if the precedence9 expression is complex.
 precedence10 = do l <- precedence9
                   p l <|> return l
-  where p l' = do xs <- char '?' >> codeAnnotations
+  where p l' = do xs <- achar '?'
                   m <- precedence9
-                  ys <- char ':' >> codeAnnotations
+                  ys <- achar ':'
                   r <- precedence10
                   return $ Conditional l' xs m ys r
 
@@ -315,7 +317,7 @@ precedence0 = do e <- primary  -- Parse primary only once for efficiency
                        <|> completeCall e
                        <|> completeIndex e
                        <|> return e
-  where t e = do xs <- char '\'' >> codeAnnotations
+  where t e = do xs <- achar '\''
                  return $ Transpose e xs
 
 {-|
@@ -334,9 +336,8 @@ completeBarCall callee =
   do (xs, e) <- try $ (,) <$> achar '(' <*> expression <* char '|'
      tuples <- ((,) <$> codeAnnotations <*> expression) `sepBy` (char ',')
      let (as, args) = if null tuples then ([[]], []) else unzip tuples
-     ys <- char ')' >> codeAnnotations
+     ys <- achar ')'
      return $ CallBar callee (e:args) (xs:as) ys
-  where achar c = char c >> codeAnnotations
 
 {-|
 Complete array/vector/matrix expression. We assume that the object to be indexed
@@ -368,7 +369,7 @@ callLike :: Char                           -- ^ Left delimiter, @(@ or @[@
          -> Parser Expr
 callLike ld rd f p e = do _ <- char ld
                           (argAnns, args) <- (try withArgs) <|> withoutArgs
-                          cs <- char rd >> codeAnnotations
+                          cs <- achar rd
                           return $ f e args argAnns cs
   where -- first case: if there is at least one argument
         -- withArgs = do todo <- q `sepBy` (char ',')
@@ -429,9 +430,9 @@ identifier = do x <- letter
                   else return $ Identifier (x:xs) ys
 
 parentheses :: Parser Expr
-parentheses = do xs <- char '(' >> codeAnnotations
+parentheses = do xs <- achar '('
                  e <- expression
-                 ys <- char ')' >> codeAnnotations
+                 ys <- achar ')'
                  return $ Parens xs e ys
 
 {-| Parse annotated binary operator on expressions -}
@@ -448,6 +449,18 @@ codeAnnotations1 :: Parser Annotations
 codeAnnotations1 = try annotations <|> justWhitespaces
   where annotations = whitespace >> (newline <|> comment) `sepEndBy1` whitespace
         justWhitespaces = whitespace1 >> return []
+
+-- | Parse annotated char: consume char then parse annotations
+achar :: Char -> Parser Annotations
+achar c = char c >> codeAnnotations
+
+-- | Consume string then parse annotations
+astring :: String -> Parser Annotations
+astring s = string s >> codeAnnotations
+
+-- | Parse two strings each followed by annotations
+astringsTuple :: String -> String -> Parser (Annotations, Annotations)
+astringsTuple a b = (,) <$> astring a <*> astring b
 
 -- | Stan comment
 comment :: Parser CodeAnnotation
@@ -477,11 +490,6 @@ whitespace = many $ oneOf " \t"
 whitespace1 :: Parser String
 whitespace1 = many1 $ oneOf " \t"
 
--- | Parse two strings each followed by annotations
-annotatedStrings :: String -> String -> Parser (Annotations, Annotations)
-annotatedStrings a b = (,) <$> anns a <*> anns b
-  where anns xs = string xs >> codeAnnotations
-
 -- | Parse statements
 statement :: Parser Stmt
 statement =   (try $ keyword "break" Break)
@@ -504,24 +512,24 @@ statement =   (try $ keyword "break" Break)
 keyword :: String                                -- ^ keyword name
         -> (Annotations -> Annotations -> Stmt)  -- ^ constructor for Stmt
         -> Parser Stmt
-keyword k constr = do xs <- string k >> codeAnnotations
-                      ys <- char ';' >> codeAnnotations
+keyword k constr = do xs <- astring k
+                      ys <- achar ';'
                       return $ constr xs ys
 
 -- | Parse block statement
 block :: Parser Stmt
-block = do xs <- char '{' >> codeAnnotations
+block = do xs <- achar '{'
            stmts <- many statement
-           ys <- char '}' >> codeAnnotations
+           ys <- achar '}'
            return $ Block xs stmts ys
 
 -- | Parse if then (else) statements
 ifElse :: Parser Stmt
-ifElse = do (xs, ys) <- try $ annotatedStrings "if" "("
+ifElse = do (xs, ys) <- try $ astringsTuple "if" "("
             cond <- expression
-            zs <- char ')' >> codeAnnotations
+            zs <- achar ')'
             stmt <- statement
-            elseAnn <- optionMaybe $ try $ string "else" >> codeAnnotations
+            elseAnn <- optionMaybe $ try $ astring "else"
             case elseAnn of
               Nothing -> return $ If xs ys cond zs stmt
               Just vs -> do stmt' <- statement
@@ -531,7 +539,7 @@ ifElse = do (xs, ys) <- try $ annotatedStrings "if" "("
 assignment :: Parser Stmt
 assignment = do (l, (xs, op)) <- try $ (,) <$> lhs <*> assignOp
                 r <- expression
-                ys <- char ';' >> codeAnnotations
+                ys <- achar ';'
                 return $ op l xs r ys
 
 {-| Type synonym for construrtors assignment (Assign, PlusAssign, ...) nodes -}
@@ -544,7 +552,7 @@ type AssignConstr = Expr          -- ^ left-hand side
 {-| Parse assignment operator and return annotations & respective constructor -}
 assignOp :: Parser ([CodeAnnotation], AssignConstr)
 assignOp = foldr1 (<|>) [p s f | (s, f) <- tokenConsts]
-  where p t g = try $ (,) <$> ((string t) >> codeAnnotations) <*> return g
+  where p t g = try $ (,) <$> (astring t) <*> return g
         tokenConsts = [ ("=", Assign)
                       , ("<-", ArrowAssign)
                       , ("+=", PlusAssign)
@@ -557,13 +565,13 @@ assignOp = foldr1 (<|>) [p s f | (s, f) <- tokenConsts]
 
 {-| Parse for-loop statement -}
 for :: Parser Stmt
-for = do (xs, ys) <- try $ annotatedStrings "for" "("
+for = do (xs, ys) <- try $ astringsTuple "for" "("
          i <- identifier
-         zs <- string "in" >> codeAnnotations
+         zs <- astring "in"
          l <- expression
          opt_r <- optionMaybe $ try $
                     char ':' >> (,) <$> codeAnnotations <*> expression
-         vs <- char ')' >> codeAnnotations
+         vs <- achar ')'
          b <- statement
          case opt_r of
            (Just (ws, r)) -> return $ ForRange xs ys i zs l ws r vs b
@@ -571,61 +579,61 @@ for = do (xs, ys) <- try $ annotatedStrings "for" "("
 
 {-| Parse while-loop statement -}
 while :: Parser Stmt
-while = do (xs, ys) <- try $ annotatedStrings "while" "("
+while = do (xs, ys) <- try $ astringsTuple "while" "("
            cond <- expression
-           zs <- char ')' >> codeAnnotations
+           zs <- achar ')'
            b <- statement
            return $ While xs ys cond zs b
 
 {-| Tilde statement -}
 tilde :: Parser Stmt
-tilde = do (l, xs) <- try $ (,) <$> expression <*> (char '~' >> codeAnnotations)
+tilde = do (l, xs) <- try $ (,) <$> expression <*> (achar '~')
            i <- identifier
            r <- completeCall i
-           ys <- char ';' >> codeAnnotations
+           ys <- achar ';'
            return $ Tilde l xs r ys
 
 {-| Return statement -}
 returnStmt :: Parser Stmt
-returnStmt = do xs <- string "return" >> codeAnnotations
+returnStmt = do xs <- astring "return"
                 e <- optionMaybe $ try expression
-                ys <- char ';' >> codeAnnotations
+                ys <- achar ';'
                 return $ Return xs e ys
 
 {-| Print statement -}
 printStmt :: Parser Stmt
-printStmt = do xs <- try $ string "print" >> codeAnnotations <* char '('
+printStmt = do xs <- try $ astring "print" <* char '('
                ps <- printables
-               ys <- char ')' >> codeAnnotations
-               zs <- char ';' >> codeAnnotations
+               ys <- achar ')'
+               zs <- achar ';'
                return $ Print xs ps ys zs
 
 {-| Reject statement -}
 reject :: Parser Stmt
-reject = do xs <- try $ string "reject" >> codeAnnotations <* char '('
+reject = do xs <- try $ astring "reject" <* char '('
             ps <- printables
-            ys <- char ')' >> codeAnnotations
-            zs <- char ';' >> codeAnnotations
+            ys <- achar ')'
+            zs <- achar ';'
             return $ Reject xs ps ys zs
 
 {-| Target plus-assign statement, e.g., @target += expr;@. -}
 targetPlusAssign :: Parser Stmt
-targetPlusAssign = do (xs, ys) <- try $ annotatedStrings "target" "+="
+targetPlusAssign = do (xs, ys) <- try $ astringsTuple "target" "+="
                       e <- expression
-                      zs <- char ';' >> codeAnnotations
+                      zs <- achar ';'
                       return $ TargetPlusAssign xs ys e zs
 
 {-| Increment log prob call -}
 incrementLogProb :: Parser Stmt
 incrementLogProb = do (xs, ys) <- try $
-                        annotatedStrings "increment_log_prob" "("
+                        astringsTuple "increment_log_prob" "("
                       e <- expression
-                      zs <- char ')' >> codeAnnotations
-                      vs <- char ';' >> codeAnnotations
+                      zs <- achar ')'
+                      vs <- achar ';'
                       return $ IncrementLogProb xs ys e zs vs
 
 emptyStmt :: Parser Stmt
-emptyStmt = char ';' >> codeAnnotations >>= return . Empty
+emptyStmt = achar ';' >>= return . Empty
 
 -- | top var declaration
 varDeclaration :: AllowVarConstraints  -- ^ allow var constraints
@@ -637,13 +645,13 @@ varDeclaration allowConstraints allowAssignment =
      dims <- optionMaybe $ try arrayDims
      if allowAssignment
        then do optAssign <- try $ optionMaybe assign
-               ys <- char ';' >> codeAnnotations
+               ys <- achar ';'
                case optAssign of
                  (Just (xs, rhs)) -> return $ VarDeclAssign t i dims xs rhs ys
                  _ -> return $ VarDecl t i dims ys
-       else do ys <- char ';' >> codeAnnotations
+       else do ys <- achar ';'
                return $ VarDecl t i dims ys
-  where assign =  do xs <- char '=' >> codeAnnotations
+  where assign =  do xs <- achar '='
                      rhs <- expression
                      return (xs, rhs)
 
@@ -679,8 +687,8 @@ varConstraint = foldr1 (<|>) (map try ps)
              , p "offset" Offset
              ]
         p s f = do xs <- codeAnnotations
-                   ys <- string s >> codeAnnotations
-                   zs <- char '=' >> codeAnnotations
+                   ys <- astring s
+                   zs <- achar '='
                    e <- constrExpression
                    return $ f xs ys zs e
 
@@ -690,7 +698,7 @@ varConstraints = do _ <- char '<'
                     vcl <- varConstraint
                     vcr <- optionMaybe $ char ',' >> varConstraint
                     let vcs = vcl : (maybeToList vcr)
-                    ys <- char '>' >> codeAnnotations
+                    ys <- achar '>'
                     return $ VarConstraints vcs ys
 
 -- | create parser for scalar `VarType`s
@@ -698,7 +706,7 @@ scalarVarType :: String                  -- ^ type name
                  -> AllowVarConstraints  -- ^ allow var constraints
                  -> ScalarVarType        -- ^ scalar `VarType` constructor
                  -> Parser VarType
-scalarVarType s a f = do xs <- string s >> codeAnnotations
+scalarVarType s a f = do xs <- astring s
                          vc <- if a
                                 then optionMaybe varConstraints
                                 else return Nothing
@@ -709,23 +717,23 @@ vectorVarType :: String               -- ^ type name
               -> AllowVarConstraints  -- ^ allow var constraints
               -> VectorVarType        -- ^ vector `VarType` constructor
               -> Parser VarType
-vectorVarType s a f = do xs <- string s >> codeAnnotations
+vectorVarType s a f = do xs <- astring s
                          vc <- if a
                                 then optionMaybe varConstraints
                                 else return Nothing
-                         ys <- char '[' >> codeAnnotations
+                         ys <- achar '['
                          d <- expression
-                         zs <- char ']' >> codeAnnotations
+                         zs <- achar ']'
                          return $ f xs vc ys d zs
 
 -- | create parser for vector `VarType`s that must not have constraints
 vectorNoConstrVarType :: String
                       -> VectorNoConstrVarType
                       -> Parser VarType
-vectorNoConstrVarType s f = do xs <- string s >> codeAnnotations
-                               ys <- char '[' >> codeAnnotations
+vectorNoConstrVarType s f = do xs <- astring s
+                               ys <- achar '['
                                d <- expression
-                               zs <- char ']' >> codeAnnotations
+                               zs <- achar ']'
                                return $ f xs ys d zs
 
 -- | create parser for matrix `VarType`s
@@ -733,34 +741,34 @@ matrixVarType :: String                  -- ^ type name
                  -> AllowVarConstraints  -- ^ allow var constraints
                  -> MatrixVarType        -- ^ vector `VarType` constructor
                  -> Parser VarType
-matrixVarType s a f = do xs <- string s >> codeAnnotations
+matrixVarType s a f = do xs <- astring s
                          vc <- if a
                                 then optionMaybe varConstraints
                                 else return Nothing
-                         ys <- char '[' >> codeAnnotations
+                         ys <- achar '['
                          d1 <- expression
-                         zs <- char ',' >> codeAnnotations
+                         zs <- achar ','
                          d2 <- expression
-                         vs <- char ']' >> codeAnnotations
+                         vs <- achar ']'
                          return $ f xs vc ys d1 zs d2 vs
 
 -- | create parser for matrix `VarType`s with optional second dimensions
 matrixOptDimsVarType :: String
                      -> MatrixOptDimsVarType
                      -> Parser VarType
-matrixOptDimsVarType s f = do xs <- string s >> codeAnnotations
-                              ys <- char '[' >> codeAnnotations
+matrixOptDimsVarType s f = do xs <- astring s
+                              ys <- achar '['
                               d1 <- expression
                               ad2 <- optionMaybe $
-                                      (,) <$> (char ',' >> codeAnnotations)
+                                      (,) <$> (achar ',')
                                           <*> expression
-                              zs <- char ']' >> codeAnnotations
+                              zs <- achar ']'
                               return $ f xs ys d1 ad2 zs
 
 -- | array dimensions
 arrayDims :: Parser ArrayDims
 arrayDims = do _ <- char '['
                ds <- p `sepBy` (char ',')
-               xs <- char ']' >> codeAnnotations
+               xs <- achar ']'
                return $ ArrayDims ds xs
   where p = (,) <$> codeAnnotations <*> expression
