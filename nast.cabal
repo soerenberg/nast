@@ -27,7 +27,6 @@ library
   exposed-modules:
       Text.Nast
       Text.Nast.AnnotatedAST
-      Text.Nast.AST
       Text.Nast.Parser
   other-modules:
       Paths_nast
